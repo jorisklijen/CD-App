@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>CD Collectie</title>
   <!-- SheetJS voor XLSX import/export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -33,10 +33,13 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      max-width: 100vw;
       background-color: var(--bg-base);
       color: var(--text-main);
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -60,12 +63,12 @@
 
     /* Top Header */
     .top-bar {
-      height: 64px;
+      min-height: 64px;
       background-color: var(--bg-base);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 8px 20px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       gap: 12px;
@@ -74,10 +77,11 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-weight: 700;
       font-size: 1.15rem;
       letter-spacing: -0.02em;
+      flex-wrap: wrap;
     }
 
     .brand svg {
@@ -112,7 +116,7 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
@@ -163,6 +167,8 @@
     .workspace {
       display: flex;
       flex: 1;
+      min-width: 0;
+      min-height: 0;
       overflow: hidden;
       padding: 8px;
       gap: 8px;
@@ -182,15 +188,17 @@
     }
 
     .sidebar-header {
-      padding: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .sidebar-title {
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: var(--text-sub);
       display: flex;
@@ -202,11 +210,20 @@
 
     .sidebar-close-mobile {
       display: none;
-      background: transparent;
-      border: none;
-      color: var(--text-sub);
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-highlight);
+      border: 1px solid var(--border);
+      color: var(--text-main);
       cursor: pointer;
-      padding: 4px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .sidebar-close-mobile:hover {
+      background: var(--bg-press);
     }
 
     .sidebar-content {
@@ -403,7 +420,9 @@
     /* Right Content View */
     .main-view {
       flex: 1;
-      background: linear-gradient(180deg, #1e2a22 0%, var(--bg-surface) 260px);
+      min-width: 0;
+      min-height: 0;
+      background: linear-gradient(180deg, #1e2a22 0%, var(--bg-surface) 240px);
       border-radius: var(--radius-md);
       display: flex;
       flex-direction: column;
@@ -413,16 +432,16 @@
 
     /* Hero Banner */
     .hero-header {
-      padding: 20px 24px 16px;
+      padding: 18px 24px 14px;
       display: flex;
       align-items: flex-end;
-      gap: 20px;
+      gap: 18px;
       flex-shrink: 0;
     }
 
     .hero-cover {
-      width: 96px;
-      height: 96px;
+      width: 84px;
+      height: 84px;
       border-radius: var(--radius-sm);
       background: linear-gradient(135deg, #1db954, #0d4a22);
       display: flex;
@@ -433,19 +452,20 @@
     }
 
     .hero-cover svg {
-      width: 48px;
-      height: 48px;
+      width: 42px;
+      height: 42px;
       color: #fff;
     }
 
     .hero-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
+      min-width: 0;
     }
 
     .hero-tag {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -453,26 +473,27 @@
     }
 
     .hero-title {
-      font-size: 2rem;
+      font-size: 1.85rem;
       font-weight: 800;
       letter-spacing: -0.03em;
       line-height: 1.1;
     }
 
     .hero-stats {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       color: var(--text-sub);
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     /* Filter & Search Bar Section */
     .controls-section {
-      padding: 0 24px 14px;
+      padding: 0 24px 12px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       flex-shrink: 0;
       border-bottom: 1px solid var(--border);
+      min-width: 0;
     }
 
     .genre-pills {
@@ -481,6 +502,7 @@
       gap: 8px;
       overflow-x: auto;
       padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .genre-pill {
@@ -494,6 +516,7 @@
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.15s ease;
+      flex-shrink: 0;
     }
 
     .genre-pill:hover {
@@ -508,12 +531,14 @@
     .search-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .search-box {
       position: relative;
       flex: 1;
+      min-width: 200px;
       max-width: 480px;
     }
 
@@ -548,7 +573,10 @@
     .table-container {
       flex: 1;
       overflow-y: auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 0 16px 24px;
+      min-height: 0;
     }
 
     table.track-table {
@@ -564,7 +592,7 @@
       z-index: 5;
       text-align: left;
       padding: 12px 10px;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--text-sub);
@@ -572,6 +600,7 @@
       cursor: pointer;
       user-select: none;
       transition: color 0.15s ease;
+      white-space: nowrap;
     }
 
     table.track-table thead th:hover {
@@ -590,11 +619,11 @@
       color: var(--accent);
     }
 
-    .col-index { width: 48px; text-align: center !important; cursor: default !important; }
+    .col-index { width: 44px; text-align: center !important; cursor: default !important; }
     .col-title { width: 38%; }
-    .col-album { width: 34%; }
-    .col-year  { width: 90px; }
-    .col-genre { width: 140px; }
+    .col-album { width: 32%; }
+    .col-year  { width: 85px; }
+    .col-genre { width: 135px; }
 
     table.track-table tbody tr {
       border-radius: var(--radius-sm);
@@ -613,7 +642,7 @@
     table.track-table td {
       padding: 8px 10px;
       vertical-align: middle;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--text-sub);
       border-bottom: 1px solid rgba(255,255,255,0.03);
       overflow: hidden;
@@ -624,20 +653,20 @@
     .cell-index {
       text-align: center;
       color: var(--text-muted);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-variant-numeric: tabular-nums;
     }
 
     .title-cell-wrap {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       overflow: hidden;
     }
 
     .track-thumb {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 4px;
       background: var(--bg-highlight);
       flex-shrink: 0;
@@ -656,8 +685,8 @@
     }
 
     .track-thumb svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       color: var(--text-muted);
     }
 
@@ -665,12 +694,13 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-width: 0;
     }
 
     .song-title-text {
       color: var(--text-main);
       font-weight: 600;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -682,7 +712,7 @@
 
     .song-artist-text {
       color: var(--text-sub);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -692,11 +722,12 @@
     }
 
     .artist-badge {
-      font-size: 0.68rem;
-      padding: 1px 6px;
+      font-size: 0.66rem;
+      padding: 1px 5px;
       border-radius: 4px;
       background: rgba(255,255,255,0.08);
       color: var(--text-sub);
+      flex-shrink: 0;
     }
 
     .album-lines {
@@ -713,11 +744,16 @@
       overflow: hidden;
       text-overflow: ellipsis;
       color: var(--text-sub);
-      font-size: 0.86rem;
+      font-size: 0.84rem;
+    }
+
+    .album-line-item span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .album-nr-badge {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       padding: 1px 6px;
       border-radius: 4px;
       background: var(--bg-highlight);
@@ -728,9 +764,9 @@
 
     .genre-badge {
       display: inline-block;
-      padding: 3px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       font-weight: 600;
       background: var(--bg-highlight);
       color: var(--text-main);
@@ -767,7 +803,7 @@
     }
 
     .modal-header {
-      padding: 18px 22px;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -775,7 +811,7 @@
     }
 
     .modal-title {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 700;
     }
 
@@ -788,7 +824,7 @@
     }
 
     .modal-body {
-      padding: 20px 22px;
+      padding: 18px 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -800,16 +836,17 @@
       gap: 8px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 12px;
+      flex-wrap: wrap;
     }
 
     .tab-btn {
-      padding: 8px 16px;
+      padding: 8px 14px;
       border-radius: var(--radius-sm);
       background: var(--bg-surface);
       color: var(--text-sub);
       border: 1px solid var(--border);
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       cursor: pointer;
     }
 
@@ -836,7 +873,7 @@
     }
 
     .form-group label {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: var(--text-sub);
       font-weight: 600;
       text-transform: uppercase;
@@ -858,11 +895,12 @@
     }
 
     .modal-footer {
-      padding: 14px 22px;
+      padding: 14px 20px;
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: flex-end;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .lookup-results-box {
@@ -894,20 +932,45 @@
     /* Responsive Mobile Layout */
     @media (max-width: 900px) {
       .top-bar {
-        height: auto;
-        padding: 12px;
-        flex-wrap: wrap;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+
+      .brand {
+        font-size: 1rem;
+        gap: 8px;
+      }
+
+      .brand svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .top-actions {
+        width: 100%;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 7px 10px;
+        font-size: 0.76rem;
+        gap: 5px;
       }
 
       .workspace {
-        position: relative;
+        padding: 4px;
+        gap: 0;
       }
 
+      /* Sidebar als nette mobiele overlay die de database niet wegdrukt */
       .sidebar {
         position: fixed;
         inset: 0;
         width: 100%;
-        z-index: 80;
+        height: 100%;
+        z-index: 90;
         border-radius: 0;
         transform: translateX(-100%);
       }
@@ -921,26 +984,98 @@
       }
 
       .hero-header {
-        padding: 16px;
+        padding: 12px 14px 10px;
+        gap: 12px;
+        align-items: center;
       }
 
       .hero-cover {
-        width: 64px;
-        height: 64px;
+        width: 48px;
+        height: 48px;
+      }
+
+      .hero-cover svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .hero-tag {
+        font-size: 0.65rem;
       }
 
       .hero-title {
-        font-size: 1.35rem;
+        font-size: 1.25rem;
       }
 
-      .col-year,
-      .col-genre,
-      .col-index {
-        display: none;
+      .hero-stats {
+        font-size: 0.75rem;
       }
 
-      .col-title { width: 55%; }
-      .col-album { width: 45%; }
+      .controls-section {
+        padding: 0 14px 10px;
+        gap: 8px;
+      }
+
+      .genre-pill {
+        padding: 5px 11px;
+        font-size: 0.76rem;
+      }
+
+      .search-box {
+        max-width: 100%;
+      }
+
+      .search-input {
+        padding: 8px 12px 8px 34px;
+        font-size: 0.82rem;
+      }
+
+      .table-container {
+        padding: 0 8px 20px;
+      }
+
+      /* Zorg dat ALLE kolommen (#, Titel/Artiest, Album+Nr, Jaar, Genre) zichtbaar en scrollbaar zijn op mobiel */
+      table.track-table {
+        min-width: 580px;
+      }
+
+      .col-index { width: 34px; display: table-cell; }
+      .col-title { width: 210px; display: table-cell; }
+      .col-album { width: 165px; display: table-cell; }
+      .col-year  { width: 65px; display: table-cell; }
+      .col-genre { width: 106px; display: table-cell; }
+
+      table.track-table thead th {
+        padding: 9px 6px;
+        font-size: 0.68rem;
+      }
+
+      table.track-table td {
+        padding: 7px 6px;
+        font-size: 0.8rem;
+      }
+
+      .track-thumb {
+        width: 32px;
+        height: 32px;
+      }
+
+      .song-title-text {
+        font-size: 0.83rem;
+      }
+
+      .song-artist-text {
+        font-size: 0.72rem;
+      }
+
+      .album-line-item {
+        font-size: 0.78rem;
+      }
+
+      .genre-badge {
+        font-size: 0.68rem;
+        padding: 2px 7px;
+      }
 
       .form-grid {
         grid-template-columns: 1fr;
@@ -989,7 +1124,7 @@
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
         </svg>
-        Firebase Instellen
+        Firebase
       </button>
     </div>
   </header>
@@ -1006,11 +1141,11 @@
           </svg>
           <span>CD Weergave</span>
         </div>
-        <button class="sidebar-close-mobile" id="btnCloseSidebarMobile" title="Sluiten">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
+        <button class="sidebar-close-mobile" id="btnCloseSidebarMobile" title="Terug naar overzicht">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
+          <span>Terug naar lijst</span>
         </button>
       </div>
       <div class="sidebar-content" id="sidebarContent">
@@ -1617,7 +1752,7 @@
         return `
           <tr data-groupkey="${escapeHtml(g.groupKey)}" class="${isSelected ? "selected-row" : ""}">
             <td class="cell-index">${idx + 1}</td>
-            <td>
+            <td class="col-title">
               <div class="title-cell-wrap">
                 <div class="track-thumb" data-artkey="${escapeHtml(cacheKey)}" data-artist="${escapeHtml(g.artist)}" data-album="${escapeHtml(firstAlbum)}">
                   ${thumbHtml}
@@ -1625,13 +1760,13 @@
                 <div class="title-meta">
                   <span class="song-title-text">${escapeHtml(g.title)}</span>
                   <span class="song-artist-text">
-                    ${escapeHtml(g.artist)}
+                    <span>${escapeHtml(g.artist)}</span>
                     ${g.bandSolo ? `<span class="artist-badge">${escapeHtml(g.bandSolo)}</span>` : ""}
                   </span>
                 </div>
               </div>
             </td>
-            <td>
+            <td class="col-album">
               <div class="album-lines">${albumLinesHtml}</div>
             </td>
             <td class="col-year">
