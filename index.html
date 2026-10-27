@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CD Collectie</title>
+  <!-- SheetJS voor XLSX import/export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-base: #0a0a0a;
+      --bg-surface: #121212;
+      --bg-elevated: #181818;
+      --bg-highlight: #242424;
+      --bg-press: #2a2a2a;
+      --accent: #1db954;
+      --accent-hover: #1ed760;
+      --text-main: #ffffff;
+      --text-sub: #a7a7a7;
+      --text-muted: #6a6a6a;
+      --border: #282828;
+      --danger: #e91429;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --sidebar-width: 350px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3e3e3e;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Top Header */
+    .top-bar {
+      height: 64px;
+      background-color: var(--bg-base);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand svg {
+      width: 28px;
+      height: 28px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .db-status {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .status-dot.online {
+      background: var(--accent);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--bg-highlight);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: scale(1.02);
+    }
+
+    .btn-outline {
+      border-color: var(--border);
+      background: transparent;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Main Workspace */
+    .workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      padding: 8px;
+      gap: 8px;
+    }
+
+    /* Left CD Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .sidebar-close-mobile {
+      display: none;
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .empty-sidebar {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--text-muted);
+      padding: 24px;
+      gap: 12px;
+    }
+
+    .empty-sidebar svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.4;
+    }
+
+    .album-block {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .album-block-header {
+      padding: 12px 14px;
+      background: var(--bg-highlight);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .album-block-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .album-block-meta {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .cd-track-list {
+      list-style: none;
+    }
+
+    .cd-track-item {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s ease;
+    }
+
+    .cd-track-item:last-child {
+      border-bottom: none;
+    }
+
+    .cd-track-collapsed {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+
+    .cd-track-collapsed:hover {
+      background: var(--bg-highlight);
+    }
+
+    .cd-track-num {
+      width: 28px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .cd-track-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-main);
+    }
+
+    .cd-track-item.active .cd-track-collapsed {
+      background: rgba(29, 185, 84, 0.12);
+    }
+
+    .cd-track-item.active .cd-track-name,
+    .cd-track-item.active .cd-track-num {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .cd-track-expanded {
+      display: none;
+      padding: 14px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .cd-track-item.active .cd-track-expanded {
+      display: block;
+    }
+
+    .expanded-cover-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: var(--bg-highlight);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 1px solid var(--border);
+    }
+
+    .expanded-cover-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .expanded-cover-wrap svg {
+      width: 64px;
+      height: 64px;
+      color: var(--text-muted);
+    }
+
+    .expanded-song-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .expanded-song-artist {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+
+    .preview-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .play-preview-btn {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #000;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+    }
+
+    .play-preview-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .play-preview-btn:disabled {
+      background: var(--bg-highlight);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .play-preview-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Right Content View */
+    .main-view {
+      flex: 1;
+      background: linear-gradient(180deg, #1e2a22 0%, var(--bg-surface) 260px);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    /* Hero Banner */
+    .hero-header {
+      padding: 20px 24px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    .hero-cover {
+      width: 96px;
+      height: 96px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #1db954, #0d4a22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .hero-cover svg {
+      width: 48px;
+      height: 48px;
+      color: #fff;
+    }
+
+    .hero-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hero-tag {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-sub);
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .hero-stats {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    /* Filter & Search Bar Section */
+    .controls-section {
+      padding: 0 24px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .genre-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .genre-pill {
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .genre-pill:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .genre-pill.active {
+      background: var(--text-main);
+      color: #000;
+    }
+
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 480px;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-sub);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 14px 9px 38px;
+      border-radius: 999px;
+      background: var(--bg-highlight);
+      border: 1px solid transparent;
+      color: var(--text-main);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border 0.15s ease, background 0.15s ease;
+    }
+
+    .search-input:focus {
+      border-color: #555;
+      background: var(--bg-press);
+    }
+
+    /* Track Table */
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 24px;
+    }
+
+    table.track-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    table.track-table thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-surface);
+      z-index: 5;
+      text-align: left;
+      padding: 12px 10px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-sub);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+    }
+
+    table.track-table thead th:hover {
+      color: var(--text-main);
+    }
+
+    .th-inner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sort-indicator {
+      display: inline-flex;
+      align-items: center;
+      color: var(--accent);
+    }
+
+    .col-index { width: 48px; text-align: center !important; cursor: default !important; }
+    .col-title { width: 38%; }
+    .col-album { width: 34%; }
+    .col-year  { width: 90px; }
+    .col-genre { width: 140px; }
+
+    table.track-table tbody tr {
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    table.track-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    table.track-table tbody tr.selected-row {
+      background: rgba(29, 185, 84, 0.15);
+    }
+
+    table.track-table td {
+      padding: 8px 10px;
+      vertical-align: middle;
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-index {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .title-cell-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .track-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      background: var(--bg-highlight);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .track-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .track-thumb svg {
+      width: 20px;
+      height: 20px;
+      color: var(--text-muted);
+    }
+
+    .title-meta {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .song-title-text {
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tr.selected-row .song-title-text {
+      color: var(--accent);
+    }
+
+    .song-artist-text {
+      color: var(--text-sub);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .artist-badge {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text-sub);
+    }
+
+    .album-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .album-line-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-sub);
+      font-size: 0.86rem;
+    }
+
+    .album-nr-badge {
+      font-size: 0.72rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--bg-highlight);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .genre-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      background: var(--bg-highlight);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    }
+
+    .modal-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .modal-body {
+      padding: 20px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .form-control {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+    }
+
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .lookup-results-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      max-height: 240px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      background: var(--bg-surface);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    /* Responsive Mobile Layout */
+    @media (max-width: 900px) {
+      .top-bar {
+        height: auto;
+        padding: 12px;
+        flex-wrap: wrap;
+      }
+
+      .workspace {
+        position: relative;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        z-index: 80;
+        border-radius: 0;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .sidebar-close-mobile {
+        display: inline-flex;
+      }
+
+      .hero-header {
+        padding: 16px;
+      }
+
+      .hero-cover {
+        width: 64px;
+        height: 64px;
+      }
+
+      .hero-title {
+        font-size: 1.35rem;
+      }
+
+      .col-year,
+      .col-genre,
+      .col-index {
+        display: none;
+      }
+
+      .col-title { width: 55%; }
+      .col-album { width: 45%; }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <span>CD Collectie</span>
+      <div class="db-status" id="dbStatusBadge">
+        <span class="status-dot" id="dbStatusDot"></span>
+        <span id="dbStatusText">Lokaal geheugen</span>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <input type="file" id="xlsxFileInput" accept=".xlsx,.xls" style="display:none" />
+      <button class="btn" id="btnUploadXlsx">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        XLSX Uploaden
+      </button>
+
+      <button class="btn btn-primary" id="btnOpenAddModal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Toevoegen
+      </button>
+
+      <button class="btn btn-outline" id="btnOpenFirebaseModal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+        Firebase Instellen
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="workspace">
+    <!-- Left CD Tracklist Menu -->
+    <aside class="sidebar" id="cdSidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <span>CD Weergave</span>
+        </div>
+        <button class="sidebar-close-mobile" id="btnCloseSidebarMobile" title="Sluiten">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="sidebar-content" id="sidebarContent">
+        <div class="empty-sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          <p>Klik op een nummer in de lijst om de bijbehorende CD, albumhoes en audio-preview te bekijken.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Tracklist View -->
+    <main class="main-view">
+      <div class="hero-header">
+        <div class="hero-cover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <div class="hero-info">
+          <span class="hero-tag">Privé Database</span>
+          <h1 class="hero-title">CD Collectie</h1>
+          <div class="hero-stats" id="collectionStats">0 nummers • 0 albums</div>
+        </div>
+      </div>
+
+      <!-- Genre Filter & Search Bar -->
+      <div class="controls-section">
+        <div class="genre-pills" id="genreFilterContainer"></div>
+        <div class="search-row">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-input"
+              placeholder="Zoek op titel, artiest, album, jaar, genre of band/solo..."
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-container">
+        <table class="track-table">
+          <thead>
+            <tr>
+              <th class="col-index">#</th>
+              <th class="col-title" data-sort="title">
+                <div class="th-inner">
+                  <span>Titel / Artiest</span>
+                  <span class="sort-indicator" id="sort-title"></span>
+                </div>
+              </th>
+              <th class="col-album" data-sort="album">
+                <div class="th-inner">
+                  <span>Album + Nr</span>
+                  <span class="sort-indicator" id="sort-album"></span>
+                </div>
+              </th>
+              <th class="col-year" data-sort="year">
+                <div class="th-inner">
+                  <span>Jaar</span>
+                  <span class="sort-indicator" id="sort-year"></span>
+                </div>
+              </th>
+              <th class="col-genre" data-sort="genre">
+                <div class="th-inner">
+                  <span>Genre</span>
+                  <span class="sort-indicator" id="sort-genre"></span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="trackTableBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Album or Single Track -->
+  <div class="modal-backdrop" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Muziek Toevoegen</div>
+        <button class="modal-close" id="btnCloseAddModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <button class="tab-btn active" id="tabBtnAlbum">Heel Album Toevoegen (Automatisch)</button>
+          <button class="tab-btn" id="tabBtnSingle">Los Nummer Toevoegen</button>
+        </div>
+
+        <!-- Tab 1: Entire Album -->
+        <div id="panelAddAlbum">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Artiest / Band</label>
+              <input type="text" id="albumArtistInput" class="form-control" placeholder="Bijv. Marillion" />
+            </div>
+            <div class="form-group">
+              <label>Album Naam</label>
+              <input type="text" id="albumTitleInput" class="form-control" placeholder="Bijv. Brave" />
+            </div>
+            <div class="form-group">
+              <label>Band / Solo (m/v)</label>
+              <select id="albumTypeInput" class="form-control">
+                <option value="band">band</option>
+                <option value="solo m">solo m</option>
+                <option value="solo v">solo v</option>
+                <option value="Singer Songwriter">Singer Songwriter</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Genre (Optioneel - zoekt automatisch)</label>
+              <input type="text" id="albumGenreInput" class="form-control" placeholder="Bijv. Symfo, Rock, Pop" />
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; display:flex; gap:10px;">
+            <button class="btn" id="btnLookupAlbum">Album Online Opzoeken</button>
+          </div>
+
+          <div id="albumLookupPreview" class="lookup-results-box" style="margin-top: 12px; display:none;"></div>
+        </div>
+
+        <!-- Tab 2: Single Track -->
+        <div id="panelAddSingle" style="display:none;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Artiest</label>
+              <input type="text" id="singleArtist" class="form-control" placeholder="Artiest" />
+            </div>
+            <div class="form-group">
+              <label>Album</label>
+              <input type="text" id="singleAlbum" class="form-control" placeholder="Album titel" />
+            </div>
+            <div class="form-group">
+              <label>Nummer op CD (nr)</label>
+              <input type="text" id="singleNr" class="form-control" placeholder="Bijv. 1 of A1" />
+            </div>
+            <div class="form-group">
+              <label>Titel van nummer</label>
+              <input type="text" id="singleTitle" class="form-control" placeholder="Nummertitel" />
+            </div>
+            <div class="form-group">
+              <label>Jaar</label>
+              <input type="number" id="singleYear" class="form-control" placeholder="Bijv. 1994" />
+            </div>
+            <div class="form-group">
+              <label>Genre (leeg = automatisch)</label>
+              <input type="text" id="singleGenre" class="form-control" placeholder="Bijv. Rock" />
+            </div>
+            <div class="form-group full">
+              <label>Band / Solo (m/v)</label>
+              <select id="singleType" class="form-control">
+                <option value="band">band</option>
+                <option value="solo m">solo m</option>
+                <option value="solo v">solo v</option>
+                <option value="Singer Songwriter">Singer Songwriter</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelAdd">Annuleren</button>
+        <button class="btn btn-primary" id="btnConfirmAdd">Bevestigen & Toevoegen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Firebase Settings -->
+  <div class="modal-backdrop" id="firebaseModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Firebase Database Koppeling</div>
+        <button class="modal-close" id="btnCloseFirebaseModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.85rem; color:var(--text-sub); line-height:1.5;">
+          Plak hieronder je Firebase configuratie (JSON of het <code>firebaseConfig</code> object uit de Firebase Console). De app synchroniseert alle nummers in blokken van 450 tegelijk zodat ook grote Excel-bestanden (3.500+ rijen) probleemloos worden opgeslagen.
+        </p>
+        <div class="form-group full">
+          <label>Firebase Config JSON</label>
+          <textarea id="firebaseConfigInput" class="form-control" rows="7" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}'></textarea>
+        </div>
+        <div class="progress-bar-wrap" id="syncProgressWrap">
+          <div class="progress-bar-fill" id="syncProgressFill"></div>
+        </div>
+        <div id="syncStatusMsg" style="font-size:0.82rem; color:var(--text-sub);"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnPushLocalToFirebase">Huidige Collectie Uploaden naar Firebase</button>
+        <button class="btn btn-primary" id="btnSaveFirebaseConfig">Opslaan & Verbinden</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Duplicate Confirmation -->
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-header">
+        <div class="modal-title">Dubbele Invoer Gevonden</div>
+      </div>
+      <div class="modal-body">
+        <p id="confirmModalText" style="font-size:0.9rem; color:var(--text-sub); line-height:1.5;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnConfirmCancel">Overslaan</button>
+        <button class="btn btn-primary" id="btnConfirmProceed">Toch Toevoegen</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="globalAudioPlayer"></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      writeBatch,
+      doc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Volledige genre-mapping op basis van de 151 artiesten in 'cd collectie Ton.xlsx'
+    const ARTIST_GENRE_MAP = {
+      "Alan Parson Project The": "Symfo",
+      "Fish": "Symfo",
+      "Genesis": "Symfo",
+      "Giersbergen Anneke / Lucassen Arjen": "Symfo",
+      "Giersbergen Anneke Van": "Symfo",
+      "Giersbergen Anneke Van/Aqua de Annique": "Symfo",
+      "Giersbergen Anneke van / Arstider": "Symfo",
+      "Gilmour David": "Symfo",
+      "Marillion": "Symfo",
+      "Oldfield Mike": "Symfo",
+      "Pink Floyd": "Symfo",
+      "Porcupine Tree": "Symfo",
+      "Rush": "Symfo",
+      "Saga": "Symfo",
+      "Waters Roger": "Symfo",
+      "Wayne Jeff": "Symfo",
+      "Yes": "Symfo",
+      "Whitin Temptation": "Symfo",
+      "Anouk": "Rock",
+      "Brood Herman & His Wild Romance": "Rock",
+      "Dijk, de": "Nederlands",
+      "Golden Earing": "Rock",
+      "Groot, Boudewijn de": "Nederlands",
+      "Klein Orkest": "Nederlands",
+      "Spinvis": "Nederlands",
+      "Tröckener Kecks": "Nederlands",
+      "Van dik hout": "Nederlands",
+      "Visser Eefje de": "Nederlands",
+      "Waylon": "Pop",
+      "A Flock of Seagulls": "New Wave",
+      "After the fire": "New Wave",
+      "Clark, Anne": "New Wave",
+      "Clash, the": "Punk",
+      "Cock Robin": "Pop",
+      "Cult The": "Rock",
+      "Depeche mode": "New Wave",
+      "Femme Fugazi": "Punk",
+      "Fontaines DC": "Punk",
+      "Joy Division": "New Wave",
+      "Mission The": "New Wave",
+      "Nena": "Pop",
+      "New Order": "New Wave",
+      "Re-flex": "New Wave",
+      "Schilling, Peter": "New Wave",
+      "Simple Minds": "New Wave",
+      "Siouxsie and the banshees": "New Wave",
+      "Talking Heads": "New Wave",
+      "Til Tuesday": "New Wave",
+      "Arcade Fire": "Alternative",
+      "Benedict": "Rock",
+      "Björk": "Alternative",
+      "Buffalo Tom": "Alternative",
+      "Coldplay": "Rock",
+      "Cranberries The": "Rock",
+      "Crowded House": "Pop",
+      "Dakota": "Rock",
+      "dEus": "Alternative",
+      "Editors": "Alternative",
+      "Elbow": "Alternative",
+      "Emotional Fish An": "Rock",
+      "Ete Gina": "Alternative",
+      "Etheridge Melissa": "Rock",
+      "Faces on TV": "Alternative",
+      "Garbage": "Alternative",
+      "Gathering The": "Rock",
+      "Habitans": "Rock",
+      "Harvey PJ": "Alternative",
+      "Health": "Alternative",
+      "Heather Nova": "Rock",
+      "Höyem Sivert": "Rock",
+      "Jezabels": "Alternative",
+      "Kings Of Leon": "Rock",
+      "Klangstof": "Alternative",
+      "Kravitz, Lenny": "Rock",
+      "Live": "Rock",
+      "Loupe": "Alternative",
+      "Madrugada": "Rock",
+      "Manchester Orchestra": "Alternative",
+      "Manson Marilyn & Bates, Tyler": "Rock",
+      "Moss": "Alternative",
+      "Mostly Bears": "Alternative",
+      "Muse": "Rock",
+      "Nirvanna": "Rock",
+      "Pearl Jam": "Rock",
+      "Pop Iggy": "Rock",
+      "Radiohead": "Alternative",
+      "Rage Against The Machine": "Rock",
+      "REM": "Rock",
+      "Skunk Anansie": "Rock",
+      "Smashing Pumpkins": "Alternative",
+      "Snow Patrol": "Rock",
+      "Sugercubes": "Alternative",
+      "The National": "Alternative",
+      "The Slow Show": "Alternative",
+      "The War on Drugs": "Rock",
+      "Thin Lizzy": "Rock",
+      "Toad the Wet Sprocket": "Alternative",
+      "Ugly Kid Joe": "Rock",
+      "Unloved": "Alternative",
+      "Vedder Eddie": "Rock",
+      "Warhaus": "Alternative",
+      "Waterboys": "Rock",
+      "XX the": "Alternative",
+      "Beach Boys The": "Pop",
+      "Bono and Gavin Friday": "Rock",
+      "Bowie David": "Rock",
+      "Bowie, David": "Rock",
+      "Carpenters, the": "Pop",
+      "Chicago": "Rock",
+      "Clapton Eric": "Blues",
+      "Electric Light Orchestra": "Rock",
+      "Fleetwood mac": "Rock",
+      "Gabriel Peter": "Rock",
+      "Hendrix Jimi": "Rock",
+      "Kinks, the": "Rock",
+      "Madonna": "Pop",
+      "Michael, George": "Pop",
+      "Presley Elvis": "Rock",
+      "Prince": "Pop",
+      "Simply red": "Pop",
+      "Texas": "Pop",
+      "Wonder": "Pop",
+      "Brun Ane": "Singer-Songwriter",
+      "Buckley Jeff": "Singer-Songwriter",
+      "Cash, Johnny": "Singer-Songwriter",
+      "Cohen, Lennard": "Singer-Songwriter",
+      "Cohen, Leonard": "Singer-Songwriter",
+      "Conner O Sinead": "Pop",
+      "Drake Nick": "Singer-Songwriter",
+      "Dybdahl Thomas": "Singer-Songwriter",
+      "Janssen Kim": "Singer-Songwriter",
+      "Lindgren, Richard": "Singer-Songwriter",
+      "Melua, Katie": "Pop",
+      "Pitou": "Singer-Songwriter",
+      "Rey del, Lana": "Pop",
+      "Rice Damian": "Singer-Songwriter",
+      "Simon And Garfunkel": "Singer-Songwriter",
+      "Tamino": "Pop",
+      "Archive": "Electronic",
+      "Bates, Tyler": "Soundtrack",
+      "Faithless": "Electronic",
+      "Jones, Trevor": "Soundtrack",
+      "Kaleida": "Electronic",
+      "London Grammar": "Electronic",
+      "Marley Bob": "Reggae",
+      "Marley, Bob": "Reggae",
+      "Massive Attack": "Electronic",
+      "Moby": "Electronic",
+      "Portishead": "Electronic",
+      "UB 40": "Reggae"
+    };
+
+    // Voorbeelddata als er nog niets geladen is
+    const INITIAL_SAMPLE_DATA = [
+      { id: "sample_1", artist: "Marillion", album: "Misplaced Childhood", nr: "1", title: "Pseudo Silk Kimono", year: 1985, genre: "Symfo", bandSolo: "band" },
+      { id: "sample_2", artist: "Marillion", album: "Misplaced Childhood", nr: "2", title: "Kayleigh", year: 1985, genre: "Symfo", bandSolo: "band" },
+      { id: "sample_3", artist: "Marillion", album: "Misplaced Childhood", nr: "3", title: "Lavender", year: 1985, genre: "Symfo", bandSolo: "band" },
+      { id: "sample_4", artist: "Marillion", album: "A Single collection", nr: "2", title: "Kayleigh", year: 1992, genre: "Symfo", bandSolo: "band" },
+      { id: "sample_5", artist: "Alan Parson Project The", album: "Pyramid", nr: "1", title: "Voyager", year: 1984, genre: "Symfo", bandSolo: "band" },
+      { id: "sample_6", artist: "Alan Parson Project The", album: "Pyramid", nr: "2", title: "What Goes Up …", year: 1984, genre: "Symfo", bandSolo: "band" },
+      { id: "sample_7", artist: "Radiohead", album: "The Bends", nr: "3", title: "High and Dry", year: 1995, genre: "Rock", bandSolo: "band" },
+      { id: "sample_8", artist: "Visser Eefje de", album: "Bitterzoet", nr: "1", title: "Bitterzoet", year: 2020, genre: "Nederlands", bandSolo: "solo v" }
+    ];
+
+    // State
+    let rawTracks = [];
+    let activeGenre = "Alle";
+    let searchQuery = "";
+    let sortState = { column: "title", direction: "asc" };
+    let selectedGroupKey = null;
+    let firestoreDb = null;
+    let addMode = "album"; // 'album' | 'single'
+    let fetchedAlbumTracks = null;
+
+    // Cache voor iTunes artwork & previews
+    const mediaCache = JSON.parse(localStorage.getItem("cd_media_cache_v1") || "{}");
+
+    const CD_SVG_ICON = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    `;
+
+    // Hulpfuncties
+    function resolveGenre(rawGenre, artistName) {
+      if (rawGenre && String(rawGenre).trim() !== "") {
+        const clean = String(rawGenre).trim().toLowerCase();
+        if (clean === "symfo") return "Symfo";
+        if (clean === "pop") return "Pop";
+        if (clean === "rock") return "Rock";
+        if (clean === "punk") return "Punk";
+        if (clean === "nederlands") return "Nederlands";
+        return String(rawGenre).trim().charAt(0).toUpperCase() + String(rawGenre).trim().slice(1);
+      }
+      const cleanArtist = String(artistName || "").trim();
+      return ARTIST_GENRE_MAP[cleanArtist] || "Rock";
+    }
+
+    function makeTrackId(artist, album, nr, title) {
+      const raw = `${artist}_${album}_${nr}_${title}`.toLowerCase().replace(/[^a-z0-9]/g, "_");
+      return raw.slice(0, 90) + "_" + Math.random().toString(36).substring(2, 7);
+    }
+
+    function naturalTrackSort(a, b) {
+      return String(a.nr).localeCompare(String(b.nr), undefined, { numeric: true, sensitivity: "base" });
+    }
+
+    // Groepeer nummers die op meerdere albums voorkomen (zelfde artiest + titel)
+    function getGroupedRows() {
+      const map = new Map();
+      for (const t of rawTracks) {
+        const key = `${t.artist.trim().toLowerCase()}|||${t.title.trim().toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            groupKey: key,
+            title: t.title.trim(),
+            artist: t.artist.trim(),
+            bandSolo: t.bandSolo || "",
+            genre: resolveGenre(t.genre, t.artist),
+            appearances: []
+          });
+        }
+        map.get(key).appearances.push({
+          id: t.id,
+          album: t.album.trim(),
+          nr: String(t.nr).trim(),
+          year: t.year || "",
+          genre: resolveGenre(t.genre, t.artist)
+        });
+      }
+      return Array.from(map.values());
+    }
+
+    // Filteren en sorteren
+    function getFilteredAndSortedGroups() {
+      let groups = getGroupedRows();
+
+      if (activeGenre !== "Alle") {
+        groups = groups.filter(g => g.genre.toLowerCase() === activeGenre.toLowerCase());
+      }
+
+      if (searchQuery.trim() !== "") {
+        const q = searchQuery.trim().toLowerCase();
+        // Zoek op alle criteria uit de XLSX behalve het tracknummer (nr)
+        groups = groups.filter(g => {
+          const matchTitle = g.title.toLowerCase().includes(q);
+          const matchArtist = g.artist.toLowerCase().includes(q);
+          const matchGenre = g.genre.toLowerCase().includes(q);
+          const matchBandSolo = String(g.bandSolo).toLowerCase().includes(q);
+          const matchAlbumOrYear = g.appearances.some(
+            ap => ap.album.toLowerCase().includes(q) || String(ap.year).toLowerCase().includes(q)
+          );
+          return matchTitle || matchArtist || matchGenre || matchBandSolo || matchAlbumOrYear;
+        });
+      }
+
+      const dir = sortState.direction === "asc" ? 1 : -1;
+      groups.sort((a, b) => {
+        let valA = "";
+        let valB = "";
+        if (sortState.column === "title") {
+          valA = a.title;
+          valB = b.title;
+        } else if (sortState.column === "album") {
+          valA = a.appearances[0]?.album || "";
+          valB = b.appearances[0]?.album || "";
+        } else if (sortState.column === "year") {
+          valA = String(a.appearances[0]?.year || "");
+          valB = String(b.appearances[0]?.year || "");
+        } else if (sortState.column === "genre") {
+          valA = a.genre;
+          valB = b.genre;
+        }
+        return valA.localeCompare(valB, "nl", { numeric: true, sensitivity: "base" }) * dir;
+      });
+
+      return groups;
+    }
+
+    // Render Genre Knoppen
+    function renderGenres() {
+      const container = document.getElementById("genreFilterContainer");
+      const genreSet = new Set(["Alle"]);
+      rawTracks.forEach(t => genreSet.add(resolveGenre(t.genre, t.artist)));
+
+      const genres = Array.from(genreSet);
+      container.innerHTML = genres
+        .map(g => `<button class="genre-pill ${g === activeGenre ? "active" : ""}" data-genre="${g}">${g}</button>`)
+        .join("");
+
+      container.querySelectorAll(".genre-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          activeGenre = btn.dataset.genre;
+          renderGenres();
+          renderTable();
+        });
+      });
+    }
+
+    // Update Sortering Pijltjes
+    function updateSortIndicators() {
+      ["title", "album", "year", "genre"].forEach(col => {
+        const el = document.getElementById(`sort-${col}`);
+        if (!el) return;
+        if (sortState.column === col) {
+          el.innerHTML = sortState.direction === "asc"
+            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"></polyline></svg>`
+            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        } else {
+          el.innerHTML = "";
+        }
+      });
+    }
+
+    // Render Hoofdtabel
+    function renderTable() {
+      updateSortIndicators();
+      const tbody = document.getElementById("trackTableBody");
+      const groups = getFilteredAndSortedGroups();
+
+      const uniqueAlbums = new Set(rawTracks.map(t => `${t.artist}___${t.album}`)).size;
+      document.getElementById("collectionStats").textContent =
+        `${rawTracks.length} nummers • ${uniqueAlbums} albums (${groups.length} weergegeven)`;
+
+      if (groups.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">
+              Geen nummers gevonden voor deze zoekopdracht of genre-selectie.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = groups.map((g, idx) => {
+        const firstAlbum = g.appearances[0]?.album || "";
+        const cacheKey = `${g.artist}|||${firstAlbum}`.toLowerCase();
+        const cachedCover = mediaCache[cacheKey]?.artworkUrl;
+
+        const thumbHtml = cachedCover
+          ? `<img src="${cachedCover}" alt="Cover" loading="lazy" />`
+          : CD_SVG_ICON;
+
+        const albumLinesHtml = g.appearances.map(ap => `
+          <div class="album-line-item">
+            <span>${escapeHtml(ap.album)}</span>
+            <span class="album-nr-badge">#${escapeHtml(ap.nr)}</span>
+          </div>
+        `).join("");
+
+        const yearLinesHtml = g.appearances.map(ap => `
+          <div class="album-line-item">${escapeHtml(String(ap.year || "-"))}</div>
+        `).join("");
+
+        const isSelected = g.groupKey === selectedGroupKey;
+
+        return `
+          <tr data-groupkey="${escapeHtml(g.groupKey)}" class="${isSelected ? "selected-row" : ""}">
+            <td class="cell-index">${idx + 1}</td>
+            <td>
+              <div class="title-cell-wrap">
+                <div class="track-thumb" data-artkey="${escapeHtml(cacheKey)}" data-artist="${escapeHtml(g.artist)}" data-album="${escapeHtml(firstAlbum)}">
+                  ${thumbHtml}
+                </div>
+                <div class="title-meta">
+                  <span class="song-title-text">${escapeHtml(g.title)}</span>
+                  <span class="song-artist-text">
+                    ${escapeHtml(g.artist)}
+                    ${g.bandSolo ? `<span class="artist-badge">${escapeHtml(g.bandSolo)}</span>` : ""}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="album-lines">${albumLinesHtml}</div>
+            </td>
+            <td class="col-year">
+              <div class="album-lines">${yearLinesHtml}</div>
+            </td>
+            <td class="col-genre">
+              <span class="genre-badge">${escapeHtml(g.genre)}</span>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      // Klik op rij -> Open CD in linkermenu
+      tbody.querySelectorAll("tr[data-groupkey]").forEach(row => {
+        row.addEventListener("click", () => {
+          selectedGroupKey = row.dataset.groupkey;
+          renderTable();
+          const groupObj = groups.find(item => item.groupKey === selectedGroupKey);
+          if (groupObj) {
+            renderSidebarForGroup(groupObj);
+            document.getElementById("cdSidebar").classList.add("mobile-open");
+          }
+        });
+      });
+
+      lazyFetchVisibleThumbnails();
+    }
+
+    // Linkermenu (CD Weergave met in- en uitklapbare nummers)
+    function renderSidebarForGroup(groupObj) {
+      const container = document.getElementById("sidebarContent");
+
+      // Voor elk album waarop het nummer voorkomt een CD-blok tonen
+      const blocksHtml = groupObj.appearances.map((ap, albumIdx) => {
+        const albumTracks = rawTracks
+          .filter(t => t.album.trim().toLowerCase() === ap.album.toLowerCase())
+          .sort(naturalTrackSort);
+
+        const itemsHtml = albumTracks.map(track => {
+          const isClickedTrack =
+            track.title.trim().toLowerCase() === groupObj.title.toLowerCase() &&
+            String(track.nr).trim() === String(ap.nr);
+
+          return `
+            <li class="cd-track-item ${isClickedTrack ? "active" : ""}"
+                data-trackid="${escapeHtml(track.id)}"
+                data-artist="${escapeHtml(track.artist)}"
+                data-album="${escapeHtml(track.album)}"
+                data-title="${escapeHtml(track.title)}">
+              <div class="cd-track-collapsed">
+                <span class="cd-track-num">${escapeHtml(String(track.nr))}</span>
+                <span class="cd-track-name">${escapeHtml(track.title)}</span>
+              </div>
+              <div class="cd-track-expanded">
+                <div class="expanded-cover-wrap" id="exp-cover-${escapeHtml(track.id)}">
+                  ${CD_SVG_ICON}
+                </div>
+                <div class="expanded-song-title">${escapeHtml(track.title)}</div>
+                <div class="expanded-song-artist" id="exp-artist-${escapeHtml(track.id)}">${escapeHtml(track.artist)}</div>
+                <div class="preview-controls">
+                  <button class="play-preview-btn" id="exp-play-${escapeHtml(track.id)}" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span>Preview zoeken...</span>
+                  </button>
+                </div>
+              </div>
+            </li>
+          `;
+        }).join("");
+
+        return `
+          <div class="album-block" data-album-index="${albumIdx}">
+            <div class="album-block-header">
+              <div class="album-block-title">${escapeHtml(ap.album)}</div>
+              <div class="album-block-meta">${escapeHtml(groupObj.artist)} • ${escapeHtml(String(ap.year || ""))} • ${albumTracks.length} nummers</div>
+            </div>
+            <ul class="cd-track-list">
+              ${itemsHtml}
+            </ul>
+          </div>
+        `;
+      }).join("");
+
+      container.innerHTML = blocksHtml;
+
+      // Klik-interactie: op ingeklapt nummer drukken klapt huidige in en gekozen nummer uit
+      container.querySelectorAll(".album-block").forEach(block => {
+        const items = block.querySelectorAll(".cd-track-item");
+        items.forEach(item => {
+          const header = item.querySelector(".cd-track-collapsed");
+          header.addEventListener("click", () => {
+            items.forEach(other => other.classList.remove("active"));
+            item.classList.add("active");
+            loadTrackDetailsInSidebar(item);
+          });
+        });
+
+        // Laad direct details voor het reeds uitgeklapte nummer
+        const activeItem = block.querySelector(".cd-track-item.active");
+        if (activeItem) {
+          loadTrackDetailsInSidebar(activeItem);
+        }
+      });
+    }
+
+    // Haal online cover + audio-preview + eventuele gastartiesten op via iTunes Search API
+    async function loadTrackDetailsInSidebar(itemEl) {
+      const trackId = itemEl.dataset.trackid;
+      const artist = itemEl.dataset.artist;
+      const album = itemEl.dataset.album;
+      const title = itemEl.dataset.title;
+
+      const coverEl = document.getElementById(`exp-cover-${trackId}`);
+      const artistEl = document.getElementById(`exp-artist-${trackId}`);
+      const playBtn = document.getElementById(`exp-play-${trackId}`);
+
+      try {
+        const query = encodeURIComponent(`${artist} ${title}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=5`);
+        const data = await res.json();
+
+        if (data.results && data.results.length > 0) {
+          const match = data.results[0];
+          const hiResCover = match.artworkUrl100 ? match.artworkUrl100.replace("100x100bb", "600x600bb") : null;
+
+          if (hiResCover && coverEl) {
+            coverEl.innerHTML = `<img src="${hiResCover}" alt="${escapeHtml(album)}" />`;
+            const cacheKey = `${artist}|||${album}`.toLowerCase();
+            mediaCache[cacheKey] = { artworkUrl: match.artworkUrl100 };
+            localStorage.setItem("cd_media_cache_v1", JSON.stringify(mediaCache));
+          }
+
+          if (match.artistName && artistEl) {
+            artistEl.textContent = match.artistName;
+          }
+
+          if (match.previewUrl && playBtn) {
+            playBtn.disabled = false;
+            playBtn.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Preview Afspelen (30s)</span>
+            `;
+            playBtn.onclick = () => togglePreviewAudio(match.previewUrl, playBtn);
+          } else if (playBtn) {
+            playBtn.disabled = true;
+            playBtn.innerHTML = `<span>Geen online preview beschikbaar</span>`;
+          }
+        } else if (playBtn) {
+          playBtn.disabled = true;
+          playBtn.innerHTML = `<span>Geen online preview gevonden</span>`;
+        }
+      } catch (err) {
+        if (playBtn) {
+          playBtn.disabled = true;
+          playBtn.innerHTML = `<span>Preview niet beschikbaar</span>`;
+        }
+      }
+    }
+
+    function togglePreviewAudio(previewUrl, btnEl) {
+      const player = document.getElementById("globalAudioPlayer");
+      if (player.src === previewUrl && !player.paused) {
+        player.pause();
+        btnEl.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Preview Afspelen (30s)</span>
+        `;
+      } else {
+        player.src = previewUrl;
+        player.play();
+        btnEl.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+          <span>Pauzeren</span>
+        `;
+        player.onended = () => {
+          btnEl.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Preview Afspelen (30s)</span>
+          `;
+        };
+      }
+    }
+
+    // Achtergrond-ophaler voor kleine album-thumbnails in de tabel
+    let thumbQueueRunning = false;
+    async function lazyFetchVisibleThumbnails() {
+      if (thumbQueueRunning) return;
+      thumbQueueRunning = true;
+      const thumbs = Array.from(document.querySelectorAll(".track-thumb")).slice(0, 25);
+      for (const el of thumbs) {
+        const key = el.dataset.artkey;
+        if (mediaCache[key]) continue;
+        const artist = el.dataset.artist;
+        const album = el.dataset.album;
+        try {
+          const q = encodeURIComponent(`${artist} ${album}`);
+          const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1`);
+          const data = await res.json();
+          if (data.results && data.results[0]?.artworkUrl100) {
+            const url = data.results[0].artworkUrl100;
+            mediaCache[key] = { artworkUrl: url };
+            el.innerHTML = `<img src="${url}" alt="Cover" loading="lazy" />`;
+          } else {
+            mediaCache[key] = { artworkUrl: null };
+          }
+          localStorage.setItem("cd_media_cache_v1", JSON.stringify(mediaCache));
+        } catch (e) {}
+      }
+      thumbQueueRunning = false;
+    }
+
+    // XLSX Bestand Inlezen
+    document.getElementById("btnUploadXlsx").addEventListener("click", () => {
+      document.getElementById("xlsxFileInput").click();
+    });
+
+    document.getElementById("xlsxFileInput").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+
+      const parsed = [];
+      for (const r of rows) {
+        const artist = String(r["Artiest"] || r["artiest"] || "").trim();
+        const album = String(r["Album"] || r["album"] || "").trim();
+        const nr = String(r["nr"] || r["Nr"] || r["NR"] || "").trim();
+        const title = String(r["Titel"] || r["titel"] || r["Tietel"] || "").trim();
+        const year = r["Jaar"] || r["jaar"] || "";
+        const rawGenre = r["genre"] || r["Genre"] || "";
+        const bandSolo = String(r["band/solo m/v"] || r["Band/Solo"] || "").trim();
+
+        if (!artist && !title) continue;
+
+        parsed.push({
+          id: makeTrackId(artist, album, nr, title),
+          artist,
+          album,
+          nr,
+          title,
+          year,
+          genre: resolveGenre(rawGenre, artist),
+          bandSolo
+        });
+      }
+
+      // Check op dubbele albums
+      const existingAlbums = new Set(rawTracks.map(t => `${t.artist.toLowerCase()}|||${t.album.toLowerCase()}`));
+      const duplicateAlbums = new Set();
+      parsed.forEach(p => {
+        const k = `${p.artist.toLowerCase()}|||${p.album.toLowerCase()}`;
+        if (existingAlbums.has(k)) duplicateAlbums.add(`${p.artist} - ${p.album}`);
+      });
+
+      if (duplicateAlbums.size > 0) {
+        const proceed = await askDuplicateConfirmation(
+          `Er staan ${duplicateAlbums.size} album(s) in het Excel-bestand die al in de collectie voorkomen (waaronder ${Array.from(duplicateAlbums).slice(0, 3).join(", ")}). Wil je het bestand alsnog importeren en samenvoegen?`
+        );
+        if (!proceed) {
+          e.target.value = "";
+          return;
+        }
+      }
+
+      rawTracks = [...rawTracks, ...parsed];
+      saveLocalTracks();
+      renderGenres();
+      renderTable();
+
+      if (firestoreDb) {
+        await uploadTracksToFirestore(parsed);
+      }
+      e.target.value = "";
+    });
+
+    function askDuplicateConfirmation(message) {
+      return new Promise(resolve => {
+        const modal = document.getElementById("confirmModal");
+        document.getElementById("confirmModalText").textContent = message;
+        modal.classList.add("open");
+
+        document.getElementById("btnConfirmCancel").onclick = () => {
+          modal.classList.remove("open");
+          resolve(false);
+        };
+        document.getElementById("btnConfirmProceed").onclick = () => {
+          modal.classList.remove("open");
+          resolve(true);
+        };
+      });
+    }
+
+    // Kolom Sortering (A-Z / Z-A)
+    document.querySelectorAll("th[data-sort]").forEach(th => {
+      th.addEventListener("click", () => {
+        const col = th.dataset.sort;
+        if (sortState.column === col) {
+          sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+        } else {
+          sortState.column = col;
+          sortState.direction = "asc";
+        }
+        renderTable();
+      });
+    });
+
+    // Zoekbalk
+    document.getElementById("searchInput").addEventListener("input", e => {
+      searchQuery = e.target.value;
+      renderTable();
+    });
+
+    // Mobiele sidebar sluiten
+    document.getElementById("btnCloseSidebarMobile").addEventListener("click", () => {
+      document.getElementById("cdSidebar").classList.remove("mobile-open");
+    });
+
+    // Modal: Toevoegen (Album of Los Nummer)
+    const addModal = document.getElementById("addModal");
+    document.getElementById("btnOpenAddModal").addEventListener("click", () => {
+      addModal.classList.add("open");
+    });
+    document.getElementById("btnCloseAddModal").addEventListener("click", () => addModal.classList.remove("open"));
+    document.getElementById("btnCancelAdd").addEventListener("click", () => addModal.classList.remove("open"));
+
+    document.getElementById("tabBtnAlbum").addEventListener("click", () => {
+      addMode = "album";
+      document.getElementById("tabBtnAlbum").classList.add("active");
+      document.getElementById("tabBtnSingle").classList.remove("active");
+      document.getElementById("panelAddAlbum").style.display = "block";
+      document.getElementById("panelAddSingle").style.display = "none";
+    });
+
+    document.getElementById("tabBtnSingle").addEventListener("click", () => {
+      addMode = "single";
+      document.getElementById("tabBtnSingle").classList.add("active");
+      document.getElementById("tabBtnAlbum").classList.remove("active");
+      document.getElementById("panelAddSingle").style.display = "block";
+      document.getElementById("panelAddAlbum").style.display = "none";
+    });
+
+    // Online Album Tracklist Zoeken via iTunes Lookup
+    document.getElementById("btnLookupAlbum").addEventListener("click", async () => {
+      const artist = document.getElementById("albumArtistInput").value.trim();
+      const album = document.getElementById("albumTitleInput").value.trim();
+      const previewBox = document.getElementById("albumLookupPreview");
+
+      if (!artist || !album) {
+        previewBox.style.display = "block";
+        previewBox.textContent = "Vul eerst zowel de artiest/band als de albumnaam in.";
+        return;
+      }
+
+      previewBox.style.display = "block";
+      previewBox.textContent = "Album en tracklist online opzoeken...";
+
+      try {
+        const q = encodeURIComponent(`${artist} ${album}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1`);
+        const albumData = await res.json();
+
+        if (!albumData.results || albumData.results.length === 0) {
+          fetchedAlbumTracks = null;
+          previewBox.textContent = "Geen album online gevonden. Controleer de spelling of voeg de nummers los toe.";
+          return;
+        }
+
+        const collectionId = albumData.results[0].collectionId;
+        const releaseYear = albumData.results[0].releaseDate
+          ? new Date(albumData.results[0].releaseDate).getFullYear()
+          : "";
+        const primaryGenre = albumData.results[0].primaryGenreName || "";
+
+        const tracksRes = await fetch(`https://itunes.apple.com/lookup?id=${collectionId}&entity=song`);
+        const tracksData = await tracksRes.json();
+
+        const songs = tracksData.results.filter(item => item.wrapperType === "track");
+        fetchedAlbumTracks = songs.map(s => ({
+          artist: artist,
+          album: albumData.results[0].collectionName || album,
+          nr: String(s.trackNumber || "1"),
+          title: s.trackName,
+          year: releaseYear,
+          genre: document.getElementById("albumGenreInput").value.trim() || resolveGenre(primaryGenre, artist),
+          bandSolo: document.getElementById("albumTypeInput").value
+        }));
+
+        previewBox.innerHTML = `
+          <div style="font-weight:700; margin-bottom:6px; color:var(--accent);">
+            Gevonden: ${escapeHtml(albumData.results[0].collectionName)} (${releaseYear}) - ${fetchedAlbumTracks.length} nummers
+          </div>
+          ${fetchedAlbumTracks.map(t => `<div>#${escapeHtml(t.nr)} - ${escapeHtml(t.title)}</div>`).join("")}
+        `;
+      } catch (err) {
+        fetchedAlbumTracks = null;
+        previewBox.textContent = "Fout bij het ophalen van de tracklist.";
+      }
+    });
+
+    // Bevestig Toevoegen (Album of Los Nummer) met Dubbelcheck
+    document.getElementById("btnConfirmAdd").addEventListener("click", async () => {
+      if (addMode === "album") {
+        if (!fetchedAlbumTracks || fetchedAlbumTracks.length === 0) {
+          alert("Klik eerst op 'Album Online Opzoeken' zodat de tracklist geladen is.");
+          return;
+        }
+
+        const checkArtist = fetchedAlbumTracks[0].artist.toLowerCase();
+        const checkAlbum = fetchedAlbumTracks[0].album.toLowerCase();
+        const exists = rawTracks.some(
+          t => t.artist.toLowerCase() === checkArtist && t.album.toLowerCase() === checkAlbum
+        );
+
+        if (exists) {
+          const proceed = await askDuplicateConfirmation(
+            `Het album "${fetchedAlbumTracks[0].album}" van ${fetchedAlbumTracks[0].artist} staat al in de collectie. Weet je zeker dat je dit album nogmaals wilt toevoegen?`
+          );
+          if (!proceed) return;
+        }
+
+        const newItems = fetchedAlbumTracks.map(t => ({
+          ...t,
+          id: makeTrackId(t.artist, t.album, t.nr, t.title)
+        }));
+
+        rawTracks = [...rawTracks, ...newItems];
+        saveLocalTracks();
+        renderGenres();
+        renderTable();
+        if (firestoreDb) await uploadTracksToFirestore(newItems);
+        addModal.classList.remove("open");
+      } else {
+        const artist = document.getElementById("singleArtist").value.trim();
+        const album = document.getElementById("singleAlbum").value.trim();
+        const nr = document.getElementById("singleNr").value.trim() || "1";
+        const title = document.getElementById("singleTitle").value.trim();
+        const year = document.getElementById("singleYear").value.trim();
+        const rawGenre = document.getElementById("singleGenre").value.trim();
+        const bandSolo = document.getElementById("singleType").value;
+
+        if (!artist || !album || !title) {
+          alert("Vul minimaal Artiest, Album en Titel in.");
+          return;
+        }
+
+        const duplicateTrack = rawTracks.some(
+          t =>
+            t.artist.toLowerCase() === artist.toLowerCase() &&
+            t.album.toLowerCase() === album.toLowerCase() &&
+            t.title.toLowerCase() === title.toLowerCase()
+        );
+
+        if (duplicateTrack) {
+          const proceed = await askDuplicateConfirmation(
+            `Het nummer "${title}" op album "${album}" van ${artist} bestaat al. Toch toevoegen?`
+          );
+          if (!proceed) return;
+        }
+
+        const newTrack = {
+          id: makeTrackId(artist, album, nr, title),
+          artist,
+          album,
+          nr,
+          title,
+          year,
+          genre: resolveGenre(rawGenre, artist),
+          bandSolo
+        };
+
+        rawTracks.push(newTrack);
+        saveLocalTracks();
+        renderGenres();
+        renderTable();
+        if (firestoreDb) await uploadTracksToFirestore([newTrack]);
+        addModal.classList.remove("open");
+      }
+    });
+
+    // Lokaal opslaan als backup
+    function saveLocalTracks() {
+      try {
+        localStorage.setItem("cd_collectie_tracks_v1", JSON.stringify(rawTracks));
+      } catch (e) {}
+    }
+
+    // Firebase Modal & Synchronisatie (Chunked per 450 items)
+    const firebaseModal = document.getElementById("firebaseModal");
+    document.getElementById("btnOpenFirebaseModal").addEventListener("click", () => {
+      const saved = localStorage.getItem("cd_firebase_config_v1") || "";
+      document.getElementById("firebaseConfigInput").value = saved;
+      firebaseModal.classList.add("open");
+    });
+    document.getElementById("btnCloseFirebaseModal").addEventListener("click", () => {
+      firebaseModal.classList.remove("open");
+    });
+
+    document.getElementById("btnSaveFirebaseConfig").addEventListener("click", async () => {
+      const rawInput = document.getElementById("firebaseConfigInput").value.trim();
+      if (!rawInput) return;
+      try {
+        const cleaned = rawInput
+          .replace(/const\s+firebaseConfig\s*=\s*/, "")
+          .replace(/;$/, "");
+        const parsedConfig = new Function(`return (${cleaned})`)();
+        localStorage.setItem("cd_firebase_config_v1", JSON.stringify(parsedConfig, null, 2));
+        await connectToFirebase(parsedConfig);
+        firebaseModal.classList.remove("open");
+      } catch (err) {
+        alert("Ongeldige Firebase configuratie. Controleer of alle sleutels (apiKey, projectId, etc.) aanwezig zijn.");
+      }
+    });
+
+    document.getElementById("btnPushLocalToFirebase").addEventListener("click", async () => {
+      if (!firestoreDb) {
+        alert("Verbind eerst met Firebase door je configuratie op te slaan.");
+        return;
+      }
+      await uploadTracksToFirestore(rawTracks);
+    });
+
+    async function connectToFirebase(configObj) {
+      try {
+        const app = initializeApp(configObj);
+        firestoreDb = getFirestore(app);
+        document.getElementById("dbStatusDot").classList.add("online");
+        document.getElementById("dbStatusText").textContent = "Firebase Verbonden";
+
+        const snap = await getDocs(collection(firestoreDb, "tracks"));
+        if (!snap.empty) {
+          const loaded = [];
+          snap.forEach(d => loaded.push(d.data()));
+          rawTracks = loaded;
+          saveLocalTracks();
+          renderGenres();
+          renderTable();
+        }
+      } catch (err) {
+        console.error("Firebase verbindingsfout:", err);
+        document.getElementById("dbStatusText").textContent = "Firebase Fout";
+      }
+    }
+
+    async function uploadTracksToFirestore(tracksArray) {
+      if (!firestoreDb || !tracksArray.length) return;
+      const wrap = document.getElementById("syncProgressWrap");
+      const fill = document.getElementById("syncProgressFill");
+      const msg = document.getElementById("syncStatusMsg");
+
+      wrap.style.display = "block";
+      const BATCH_SIZE = 450;
+
+      for (let i = 0; i < tracksArray.length; i += BATCH_SIZE) {
+        const chunk = tracksArray.slice(i, i + BATCH_SIZE);
+        const batch = writeBatch(firestoreDb);
+        chunk.forEach(track => {
+          const ref = doc(collection(firestoreDb, "tracks"), track.id);
+          batch.set(ref, track);
+        });
+        await batch.commit();
+        const done = Math.min(i + BATCH_SIZE, tracksArray.length);
+        const pct = Math.round((done / tracksArray.length) * 100);
+        fill.style.width = `${pct}%`;
+        msg.textContent = `Firebase synchronisatie: ${done} / ${tracksArray.length} nummers opgeslagen...`;
+      }
+      msg.textContent = `Voltooid! Alle ${tracksArray.length} nummers staan in Firebase.`;
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // Initialisatie bij opstarten
+    (async function init() {
+      const savedTracks = localStorage.getItem("cd_collectie_tracks_v1");
+      if (savedTracks) {
+        try {
+          rawTracks = JSON.parse(savedTracks);
+        } catch (e) {
+          rawTracks = INITIAL_SAMPLE_DATA;
+        }
+      } else {
+        rawTracks = INITIAL_SAMPLE_DATA;
+      }
+
+      renderGenres();
+      renderTable();
+
+      const savedFirebase = localStorage.getItem("cd_firebase_config_v1");
+      if (savedFirebase) {
+        try {
+          await connectToFirebase(JSON.parse(savedFirebase));
+        } catch (e) {}
+      }
+    })();
+  </script>
+</body>
+</html>
