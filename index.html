@@ -297,7 +297,14 @@
       color: var(--text-sub);
     }
 
-    .icon-delete-btn {
+    .row-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .icon-action-btn {
       background: transparent;
       border: 1px solid transparent;
       color: var(--text-muted);
@@ -309,6 +316,12 @@
       justify-content: center;
       transition: all 0.15s ease;
       flex-shrink: 0;
+    }
+
+    .icon-edit-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border);
     }
 
     .icon-delete-btn:hover {
@@ -807,12 +820,12 @@
     }
 
     .col-index  { width: 42px; text-align: center !important; cursor: default !important; }
-    .col-title  { width: 28%; }
+    .col-title  { width: 27%; }
     .col-album  { width: 25%; }
     .col-artist { width: 22%; }
     .col-year   { width: 75px; }
     .col-genre  { width: 120px; }
-    .col-action { width: 44px; text-align: center !important; cursor: default !important; }
+    .col-action { width: 72px; text-align: right !important; cursor: default !important; }
 
     table.track-table tbody tr {
       border-radius: var(--radius-sm);
@@ -910,30 +923,7 @@
       gap: 6px;
     }
 
-    .artist-col-wrap {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      overflow: hidden;
-    }
-
-    .artist-col-name {
-      color: var(--text-main);
-      font-size: 0.86rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .artist-badge {
-      font-size: 0.66rem;
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.08);
-      color: var(--text-sub);
-      flex-shrink: 0;
-    }
-
+    /* Zelfde styling voor Album, Artiest en Jaar kolommen */
     .album-lines {
       display: flex;
       flex-direction: column;
@@ -1098,6 +1088,46 @@
       border-color: var(--accent);
     }
 
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .edit-appearances-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .edit-appearance-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr 80px 90px;
+      gap: 10px;
+      align-items: end;
+    }
+
     .modal-footer {
       padding: 14px 20px;
       border-top: 1px solid var(--border);
@@ -1237,9 +1267,8 @@
         padding: 0 8px 76px;
       }
 
-      /* Zorg dat alle kolommen (#, Titel, Album+Nr, Artiest, Jaar, Genre, Verwijder) scrollbaar zijn op mobiel */
       table.track-table {
-        min-width: 720px;
+        min-width: 750px;
       }
 
       .col-index  { width: 34px; display: table-cell; }
@@ -1248,7 +1277,7 @@
       .col-artist { width: 145px; display: table-cell; }
       .col-year   { width: 60px; display: table-cell; }
       .col-genre  { width: 95px; display: table-cell; }
-      .col-action { width: 38px; display: table-cell; }
+      .col-action { width: 64px; display: table-cell; }
 
       table.track-table thead th {
         padding: 9px 6px;
@@ -1284,6 +1313,13 @@
 
       .form-grid {
         grid-template-columns: 1fr;
+      }
+
+      .edit-appearance-card {
+        grid-template-columns: 1fr 1fr;
+      }
+      .edit-appearance-card > div:first-child {
+        grid-column: 1 / -1;
       }
     }
   </style>
@@ -1435,7 +1471,7 @@
                   <span class="sort-indicator" id="sort-genre"></span>
                 </div>
               </th>
-              <th class="col-action" title="Verwijderen"></th>
+              <th class="col-action" title="Bewerken / Verwijderen"></th>
             </tr>
           </thead>
           <tbody id="trackTableBody"></tbody>
@@ -1473,6 +1509,59 @@
     </div>
     <div class="mini-player-bar-track">
       <div class="mini-player-bar-fill" id="miniPlayerProgressFill"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Regel / Nummer Bewerken -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Gegevens Aanpassen</div>
+        <button class="modal-close" id="btnCloseEditModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Titel van nummer</label>
+            <input type="text" id="editTitleInput" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Artiest / Band</label>
+            <input type="text" id="editArtistInput" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Genre</label>
+            <input type="text" id="editGenreInput" class="form-control" list="genreSuggestionsList" placeholder="Bijv. Rock, Symfo, Pop" />
+            <datalist id="genreSuggestionsList"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Band / Solo (m/v)</label>
+            <select id="editBandSoloInput" class="form-control">
+              <option value="">- Geen / Onbekend -</option>
+              <option value="band">band</option>
+              <option value="solo m">solo m</option>
+              <option value="solo v">solo v</option>
+              <option value="Singer Songwriter">Singer Songwriter</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="edit-appearances-section" id="editAppearancesContainer"></div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="editApplyAlbumWide" />
+          <span>Pas gewijzigd <strong>Genre</strong>, <strong>Artiest</strong> en <strong>Band/Solo</strong> ook direct toe op alle andere nummers van ditzelfde album</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelEdit">Annuleren</button>
+        <button class="btn btn-primary" id="btnSaveEdit">Wijzigingen Opslaan</button>
+      </div>
     </div>
   </div>
 
@@ -1610,15 +1699,16 @@
 
   <!-- Modal: Confirmation (Duplicates & Deletions) -->
   <div class="modal-backdrop" id="confirmModal">
-    <div class="modal" style="max-width:460px;">
+    <div class="modal" style="max-width:540px;">
       <div class="modal-header">
         <div class="modal-title" id="confirmModalTitle">Bevestiging</div>
       </div>
       <div class="modal-body">
-        <p id="confirmModalText" style="font-size:0.9rem; color:var(--text-sub); line-height:1.5;"></p>
+        <p id="confirmModalText" style="font-size:0.9rem; color:var(--text-sub); line-height:1.55;"></p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" id="btnConfirmCancel">Annuleren</button>
+        <button class="btn btn-outline" id="btnConfirmSkipDuplicates" style="display:none; border-color: var(--accent); color: var(--accent);">Dubbele Overslaan (Alleen nieuwe)</button>
         <button class="btn btn-primary" id="btnConfirmProceed">Bevestigen</button>
       </div>
     </div>
@@ -1633,11 +1723,9 @@
       collection,
       getDocs,
       writeBatch,
-      deleteDoc,
       doc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Standaard Firebase-configuratie van jouw project
     const DEFAULT_FIREBASE_CONFIG = {
       apiKey: "AIzaSyCJ26FsOt937VVBBwrQuBKWI5Tf6CFajXE",
       authDomain: "cd-collectie-be8be.firebaseapp.com",
@@ -1647,7 +1735,6 @@
       appId: "1:583482943776:web:3d2f927f930d41efe48f45"
     };
 
-    // Volledige genre-mapping op basis van de 151 artiesten in 'cd collectie Ton.xlsx'
     const ARTIST_GENRE_MAP = {
       "Alan Parson Project The": "Symfo",
       "Fish": "Symfo",
@@ -1821,9 +1908,8 @@
     let firestoreDb = null;
     let addMode = "album";
     let fetchedAlbumTracks = null;
-
-    // Audio Preview State
-    let currentPreviewMeta = null; // { trackId, title, artist, coverUrl }
+    let currentPreviewMeta = null;
+    let currentEditingGroup = null;
 
     const mediaCache = JSON.parse(localStorage.getItem("cd_media_cache_v1") || "{}");
 
@@ -1831,6 +1917,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="12" cy="12" r="10"></circle>
         <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    `;
+
+    const EDIT_SVG_ICON = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
       </svg>
     `;
 
@@ -1955,6 +2048,15 @@
           renderTable();
         });
       });
+
+      // Vul ook de genre-suggestielijst in het bewerk-venster
+      const datalist = document.getElementById("genreSuggestionsList");
+      if (datalist) {
+        datalist.innerHTML = genres
+          .filter(g => g !== "Alle")
+          .map(g => `<option value="${escapeHtml(g)}"></option>`)
+          .join("");
+      }
     }
 
     function updateSortIndicators() {
@@ -1976,7 +2078,7 @@
       const tbody = document.getElementById("trackTableBody");
       const groups = getFilteredAndSortedGroups();
 
-      const uniqueAlbums = new Set(rawTracks.map(t => `${t.artist}___${t.album}`)).size;
+      const uniqueAlbums = new Set(rawTracks.map(t => `${t.artist.trim().toLowerCase()}|||${t.album.trim().toLowerCase()}`)).size;
       document.getElementById("collectionStats").textContent =
         `${rawTracks.length} nummers • ${uniqueAlbums} albums (${groups.length} weergegeven)`;
 
@@ -2033,9 +2135,11 @@
               <div class="album-lines">${albumLinesHtml}</div>
             </td>
             <td class="col-artist">
-              <div class="artist-col-wrap">
-                <span class="artist-col-name">${escapeHtml(g.artist)}</span>
-                ${g.bandSolo ? `<span class="artist-badge">${escapeHtml(g.bandSolo)}</span>` : ""}
+              <div class="album-lines">
+                <div class="album-line-item">
+                  <span>${escapeHtml(g.artist)}</span>
+                  ${g.bandSolo ? `<span class="album-nr-badge">${escapeHtml(g.bandSolo)}</span>` : ""}
+                </div>
               </div>
             </td>
             <td class="col-year">
@@ -2045,18 +2149,22 @@
               <span class="genre-badge">${escapeHtml(g.genre)}</span>
             </td>
             <td class="col-action">
-              <button class="icon-delete-btn btn-delete-group" data-groupkey="${escapeHtml(g.groupKey)}" title="Nummer verwijderen">
-                ${TRASH_SVG_ICON}
-              </button>
+              <div class="row-actions">
+                <button class="icon-action-btn icon-edit-btn btn-edit-group" data-groupkey="${escapeHtml(g.groupKey)}" title="Regel aanpassen">
+                  ${EDIT_SVG_ICON}
+                </button>
+                <button class="icon-action-btn icon-delete-btn btn-delete-group" data-groupkey="${escapeHtml(g.groupKey)}" title="Nummer verwijderen">
+                  ${TRASH_SVG_ICON}
+                </button>
+              </div>
             </td>
           </tr>
         `;
       }).join("");
 
-      // Klik op rij -> Open CD in linkermenu
       tbody.querySelectorAll("tr[data-groupkey]").forEach(row => {
         row.addEventListener("click", (e) => {
-          if (e.target.closest(".btn-delete-group")) return;
+          if (e.target.closest(".btn-delete-group") || e.target.closest(".btn-edit-group")) return;
           selectedGroupKey = row.dataset.groupkey;
           renderTable();
           const groupObj = groups.find(item => item.groupKey === selectedGroupKey);
@@ -2068,7 +2176,17 @@
         });
       });
 
-      // Verwijderknop per rij in de tabel
+      // Bewerken-knop per rij
+      tbody.querySelectorAll(".btn-edit-group").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const gKey = btn.dataset.groupkey;
+          const groupObj = groups.find(item => item.groupKey === gKey);
+          if (groupObj) openEditModalForGroup(groupObj);
+        });
+      });
+
+      // Verwijder-knop per rij
       tbody.querySelectorAll(".btn-delete-group").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           e.stopPropagation();
@@ -2090,7 +2208,127 @@
       lazyFetchVisibleThumbnails();
     }
 
-    // Linkermenu (CD Weergave met in- en uitklapbare nummers + voortgangsbalk + verwijderoptie)
+    // Open en vul de Bewerk-modal
+    function openEditModalForGroup(groupObj) {
+      currentEditingGroup = groupObj;
+      document.getElementById("editTitleInput").value = groupObj.title;
+      document.getElementById("editArtistInput").value = groupObj.artist;
+      document.getElementById("editGenreInput").value = groupObj.genre;
+
+      const bsSelect = document.getElementById("editBandSoloInput");
+      const bsNormalized = String(groupObj.bandSolo || "").trim();
+      if (Array.from(bsSelect.options).some(opt => opt.value.toLowerCase() === bsNormalized.toLowerCase())) {
+        const matchOpt = Array.from(bsSelect.options).find(opt => opt.value.toLowerCase() === bsNormalized.toLowerCase());
+        bsSelect.value = matchOpt.value;
+      } else {
+        bsSelect.value = "";
+      }
+
+      document.getElementById("editApplyAlbumWide").checked = false;
+
+      const appContainer = document.getElementById("editAppearancesContainer");
+      appContainer.innerHTML = groupObj.appearances.map((ap, i) => `
+        <div class="edit-appearance-card" data-trackid="${escapeHtml(ap.id)}">
+          <div class="form-group">
+            <label>Album ${groupObj.appearances.length > 1 ? `(${i + 1})` : ""}</label>
+            <input type="text" class="form-control edit-ap-album" value="${escapeHtml(ap.album)}" />
+          </div>
+          <div class="form-group">
+            <label>Nr op CD</label>
+            <input type="text" class="form-control edit-ap-nr" value="${escapeHtml(ap.nr)}" />
+          </div>
+          <div class="form-group">
+            <label>Jaar</label>
+            <input type="text" class="form-control edit-ap-year" value="${escapeHtml(String(ap.year || ""))}" />
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("editModal").classList.add("open");
+    }
+
+    const editModal = document.getElementById("editModal");
+    document.getElementById("btnCloseEditModal").addEventListener("click", () => editModal.classList.remove("open"));
+    document.getElementById("btnCancelEdit").addEventListener("click", () => editModal.classList.remove("open"));
+
+    document.getElementById("btnSaveEdit").addEventListener("click", async () => {
+      if (!currentEditingGroup) return;
+
+      const newTitle = document.getElementById("editTitleInput").value.trim();
+      const newArtist = document.getElementById("editArtistInput").value.trim();
+      const newGenreRaw = document.getElementById("editGenreInput").value.trim();
+      const newBandSolo = document.getElementById("editBandSoloInput").value;
+      const applyAlbumWide = document.getElementById("editApplyAlbumWide").checked;
+
+      if (!newTitle || !newArtist) {
+        alert("Titel en Artiest mogen niet leeg zijn.");
+        return;
+      }
+
+      const finalGenre = resolveGenre(newGenreRaw, newArtist);
+      const apCards = Array.from(document.querySelectorAll("#editAppearancesContainer .edit-appearance-card"));
+      const apUpdates = new Map();
+      const affectedOriginalAlbums = new Set();
+
+      apCards.forEach(card => {
+        const tid = card.dataset.trackid;
+        const alb = card.querySelector(".edit-ap-album").value.trim();
+        const nr = card.querySelector(".edit-ap-nr").value.trim() || "1";
+        const yr = card.querySelector(".edit-ap-year").value.trim();
+        apUpdates.set(tid, { album: alb, nr, year: yr });
+      });
+
+      currentEditingGroup.appearances.forEach(ap => {
+        affectedOriginalAlbums.add(`${currentEditingGroup.artist.trim().toLowerCase()}|||${ap.album.trim().toLowerCase()}`);
+      });
+
+      const modifiedTracks = [];
+
+      rawTracks.forEach(track => {
+        if (apUpdates.has(track.id)) {
+          const u = apUpdates.get(track.id);
+          track.title = newTitle;
+          track.artist = newArtist;
+          track.genre = finalGenre;
+          track.bandSolo = newBandSolo;
+          if (u.album) track.album = u.album;
+          track.nr = u.nr;
+          track.year = u.year;
+          modifiedTracks.push(track);
+        } else if (applyAlbumWide) {
+          const trackAlbumKey = `${track.artist.trim().toLowerCase()}|||${track.album.trim().toLowerCase()}`;
+          if (affectedOriginalAlbums.has(trackAlbumKey)) {
+            track.artist = newArtist;
+            track.genre = finalGenre;
+            if (newBandSolo) track.bandSolo = newBandSolo;
+            // Als er maar 1 album bij deze regel hoorde en de albumnaam is gecorrigeerd, neem die ook mee
+            if (apCards.length === 1) {
+              const singleUpdatedAlbum = apUpdates.values().next().value.album;
+              if (singleUpdatedAlbum) track.album = singleUpdatedAlbum;
+            }
+            modifiedTracks.push(track);
+          }
+        }
+      });
+
+      saveLocalTracks();
+      selectedGroupKey = `${newArtist.toLowerCase()}|||${newTitle.toLowerCase()}`;
+      renderGenres();
+      renderTable();
+
+      const updatedGroups = getGroupedRows();
+      const updatedGroupObj = updatedGroups.find(g => g.groupKey === selectedGroupKey);
+      if (updatedGroupObj && document.getElementById("sidebarContent").querySelector(".album-block")) {
+        renderSidebarForGroup(updatedGroupObj);
+      }
+
+      editModal.classList.remove("open");
+
+      if (firestoreDb && modifiedTracks.length > 0) {
+        await uploadTracksToFirestore(modifiedTracks);
+      }
+    });
+
     function renderSidebarForGroup(groupObj) {
       const container = document.getElementById("sidebarContent");
 
@@ -2123,9 +2361,14 @@
                     <div class="expanded-song-title">${escapeHtml(track.title)}</div>
                     <div class="expanded-song-artist" id="exp-artist-${escapeHtml(track.id)}">${escapeHtml(track.artist)}</div>
                   </div>
-                  <button class="icon-delete-btn btn-delete-single-track" data-trackid="${escapeHtml(track.id)}" data-title="${escapeHtml(track.title)}" title="Dit nummer verwijderen">
-                    ${TRASH_SVG_ICON}
-                  </button>
+                  <div class="row-actions">
+                    <button class="icon-action-btn icon-edit-btn btn-edit-single-track" data-trackid="${escapeHtml(track.id)}" title="Dit nummer aanpassen">
+                      ${EDIT_SVG_ICON}
+                    </button>
+                    <button class="icon-action-btn icon-delete-btn btn-delete-single-track" data-trackid="${escapeHtml(track.id)}" data-title="${escapeHtml(track.title)}" title="Dit nummer verwijderen">
+                      ${TRASH_SVG_ICON}
+                    </button>
+                  </div>
                 </div>
                 <div class="preview-controls">
                   <button class="play-preview-btn" id="exp-play-${escapeHtml(track.id)}" disabled>
@@ -2148,7 +2391,7 @@
                 <div class="album-block-title">${escapeHtml(ap.album)}</div>
                 <div class="album-block-meta">${escapeHtml(groupObj.artist)} • ${escapeHtml(String(ap.year || ""))} • ${albumTracks.length} nummers</div>
               </div>
-              <button class="icon-delete-btn btn-delete-entire-album" data-album="${escapeHtml(ap.album)}" data-artist="${escapeHtml(groupObj.artist)}" title="Volledig album verwijderen">
+              <button class="icon-action-btn icon-delete-btn btn-delete-entire-album" data-album="${escapeHtml(ap.album)}" data-artist="${escapeHtml(groupObj.artist)}" title="Volledig album verwijderen">
                 ${TRASH_SVG_ICON}
               </button>
             </div>
@@ -2161,11 +2404,9 @@
 
       container.innerHTML = blocksHtml;
 
-      // Klik op heel album verwijderen
       container.querySelectorAll(".btn-delete-entire-album").forEach(btn => {
         btn.addEventListener("click", async () => {
           const albumName = btn.dataset.album;
-          const artistName = btn.dataset.artist;
           const matchingTracks = rawTracks.filter(
             t => t.album.trim().toLowerCase() === albumName.trim().toLowerCase()
           );
@@ -2180,7 +2421,18 @@
         });
       });
 
-      // Klik op los nummer verwijderen vanuit de CD-weergave
+      container.querySelectorAll(".btn-edit-single-track").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const trackId = btn.dataset.trackid;
+          const trk = rawTracks.find(t => t.id === trackId);
+          if (!trk) return;
+          const gKey = `${trk.artist.trim().toLowerCase()}|||${trk.title.trim().toLowerCase()}`;
+          const grp = getGroupedRows().find(g => g.groupKey === gKey);
+          if (grp) openEditModalForGroup(grp);
+        });
+      });
+
       container.querySelectorAll(".btn-delete-single-track").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           e.stopPropagation();
@@ -2195,7 +2447,6 @@
         });
       });
 
-      // Klik-interactie voor in- en uitklappen van nummers
       container.querySelectorAll(".album-block").forEach(block => {
         const items = block.querySelectorAll(".cd-track-item");
         items.forEach(item => {
@@ -2303,7 +2554,6 @@
         updatePlayButtonUI(playBtn, false);
         updateMiniPlayerToggleIcon(false);
       } else {
-        // Reset eventuele vorige balken
         document.querySelectorAll(".preview-progress-track").forEach(el => el.classList.remove("active"));
         document.querySelectorAll(".preview-progress-fill").forEach(el => { el.style.width = "0%"; });
 
@@ -2323,20 +2573,17 @@
       }
     }
 
-    // Audio Player Events voor de groeiende witte voortgangsbalk & mini-player
     const globalPlayer = document.getElementById("globalAudioPlayer");
 
     globalPlayer.addEventListener("timeupdate", () => {
       if (!globalPlayer.duration || !currentPreviewMeta) return;
       const pct = Math.min(100, (globalPlayer.currentTime / globalPlayer.duration) * 100);
 
-      // Update witte balk onder de preview in de sidebar
       const sidebarFill = document.getElementById(`exp-prog-fill-${currentPreviewMeta.trackId}`);
       const sidebarWrap = document.getElementById(`exp-prog-wrap-${currentPreviewMeta.trackId}`);
       if (sidebarWrap) sidebarWrap.classList.add("active");
       if (sidebarFill) sidebarFill.style.width = `${pct}%`;
 
-      // Update witte balk onderin de mobiele mini-player
       const miniFill = document.getElementById("miniPlayerProgressFill");
       if (miniFill) miniFill.style.width = `${pct}%`;
     });
@@ -2392,13 +2639,8 @@
       const sidebarOpenOnMobile = document.getElementById("cdSidebar").classList.contains("mobile-open");
       const isMobileViewport = window.innerWidth <= 900;
 
-      // Toon mini-speler onderin wanneer er een preview actief is en op mobiel het venster is gesloten
-      if (currentPreviewMeta && (!isMobileViewport || !sidebarOpenOnMobile)) {
-        if (isMobileViewport) {
-          miniPlayer.classList.add("visible");
-        } else {
-          miniPlayer.classList.remove("visible");
-        }
+      if (currentPreviewMeta && isMobileViewport && !sidebarOpenOnMobile) {
+        miniPlayer.classList.add("visible");
       } else {
         miniPlayer.classList.remove("visible");
       }
@@ -2460,7 +2702,6 @@
       renderGenres();
       renderTable();
 
-      // Bijwerken van de sidebar als het geselecteerde nummer nog bestaat, anders legen
       const remainingGroups = getGroupedRows();
       const stillExists = remainingGroups.find(g => g.groupKey === selectedGroupKey);
       if (stillExists) {
@@ -2480,7 +2721,6 @@
       }
     }
 
-    // Volledige database wissen
     document.getElementById("btnClearEntireDatabase").addEventListener("click", async () => {
       const proceed = await askUserConfirmation(
         "Volledige Database Wissen",
@@ -2516,7 +2756,6 @@
       msg.textContent = "De volledige database is gewist.";
     });
 
-    // Achtergrond-ophaler voor kleine album-thumbnails in de tabel
     let thumbQueueRunning = false;
     async function lazyFetchVisibleThumbnails() {
       if (thumbQueueRunning) return;
@@ -2544,7 +2783,7 @@
       thumbQueueRunning = false;
     }
 
-    // XLSX Bestand Inlezen
+    // XLSX Bestand Inlezen met optie om Dubbele Albums over te slaan en alleen nieuwe te uploaden
     document.getElementById("btnUploadXlsx").addEventListener("click", () => {
       document.getElementById("xlsxFileInput").click();
     });
@@ -2582,38 +2821,114 @@
         });
       }
 
-      const existingAlbums = new Set(rawTracks.map(t => `${t.artist.toLowerCase()}|||${t.album.toLowerCase()}`));
+      const existingAlbumKeys = new Set(
+        rawTracks.map(t => `${t.artist.trim().toLowerCase()}|||${t.album.trim().toLowerCase()}`)
+      );
+
       const duplicateAlbums = new Set();
+      const newAlbums = new Set();
+      const newTracksOnly = [];
+
       parsed.forEach(p => {
-        const k = `${p.artist.toLowerCase()}|||${p.album.toLowerCase()}`;
-        if (existingAlbums.has(k)) duplicateAlbums.add(`${p.artist} - ${p.album}`);
+        const albumKey = `${p.artist.trim().toLowerCase()}|||${p.album.trim().toLowerCase()}`;
+        if (existingAlbumKeys.has(albumKey)) {
+          duplicateAlbums.add(`${p.artist} - ${p.album}`);
+        } else {
+          newAlbums.add(`${p.artist} - ${p.album}`);
+          newTracksOnly.push(p);
+        }
       });
 
+      let tracksToUpload = parsed;
+
       if (duplicateAlbums.size > 0) {
-        const proceed = await askUserConfirmation(
-          "Dubbele Invoer Gevonden",
-          `Er staan ${duplicateAlbums.size} album(s) in het Excel-bestand die al in de collectie voorkomen (waaronder ${Array.from(duplicateAlbums).slice(0, 3).join(", ")}). Wil je het bestand alsnog importeren en samenvoegen?`
+        const choice = await askDuplicateImportChoice(
+          duplicateAlbums.size,
+          newAlbums.size,
+          newTracksOnly.length,
+          Array.from(duplicateAlbums).slice(0, 3)
         );
-        if (!proceed) {
+
+        if (choice === "cancel") {
           e.target.value = "";
           return;
+        } else if (choice === "skip") {
+          tracksToUpload = newTracksOnly;
+        } else if (choice === "all") {
+          tracksToUpload = parsed;
         }
       }
 
-      rawTracks = [...rawTracks, ...parsed];
+      if (tracksToUpload.length === 0) {
+        e.target.value = "";
+        return;
+      }
+
+      rawTracks = [...rawTracks, ...tracksToUpload];
       saveLocalTracks();
       renderGenres();
       renderTable();
 
       if (firestoreDb) {
-        await uploadTracksToFirestore(parsed);
+        await uploadTracksToFirestore(tracksToUpload);
       }
       e.target.value = "";
     });
 
+    function askDuplicateImportChoice(dupAlbumCount, newAlbumCount, newTrackCount, sampleDupList) {
+      return new Promise(resolve => {
+        const modal = document.getElementById("confirmModal");
+        const skipBtn = document.getElementById("btnConfirmSkipDuplicates");
+        const proceedBtn = document.getElementById("btnConfirmProceed");
+        const cancelBtn = document.getElementById("btnConfirmCancel");
+
+        document.getElementById("confirmModalTitle").textContent = "Dubbele Invoer Gevonden";
+
+        if (newAlbumCount > 0) {
+          document.getElementById("confirmModalText").textContent =
+            `Er staan ${dupAlbumCount} album(s) in het Excel-bestand die al in de collectie voorkomen (waaronder ${sampleDupList.join(", ")}). ` +
+            `Daarnaast bevat het bestand ${newAlbumCount} nieuwe album(s) (${newTrackCount} nummers) die er nog niet in staan. Wat wil je doen?`;
+          skipBtn.style.display = "inline-flex";
+          skipBtn.textContent = `Dubbele Overslaan (${newAlbumCount} nieuwe uploaden)`;
+          proceedBtn.textContent = "Alles Importeren";
+        } else {
+          document.getElementById("confirmModalText").textContent =
+            `Alle ${dupAlbumCount} album(s) in dit Excel-bestand staan al in de collectie (waaronder ${sampleDupList.join(", ")}). Er zijn geen nieuwe albums gevonden. Wil je het bestand alsnog dubbel toevoegen of annuleren?`;
+          skipBtn.style.display = "none";
+          proceedBtn.textContent = "Toch Alles Toevoegen";
+        }
+
+        modal.classList.add("open");
+
+        const cleanup = () => {
+          modal.classList.remove("open");
+          skipBtn.style.display = "none";
+          proceedBtn.textContent = "Bevestigen";
+        };
+
+        cancelBtn.onclick = () => {
+          cleanup();
+          resolve("cancel");
+        };
+        skipBtn.onclick = () => {
+          cleanup();
+          resolve("skip");
+        };
+        proceedBtn.onclick = () => {
+          cleanup();
+          resolve("all");
+        };
+      });
+    }
+
     function askUserConfirmation(title, message) {
       return new Promise(resolve => {
         const modal = document.getElementById("confirmModal");
+        const skipBtn = document.getElementById("btnConfirmSkipDuplicates");
+        const proceedBtn = document.getElementById("btnConfirmProceed");
+
+        skipBtn.style.display = "none";
+        proceedBtn.textContent = "Bevestigen";
         document.getElementById("confirmModalTitle").textContent = title;
         document.getElementById("confirmModalText").textContent = message;
         modal.classList.add("open");
@@ -2622,7 +2937,7 @@
           modal.classList.remove("open");
           resolve(false);
         };
-        document.getElementById("btnConfirmProceed").onclick = () => {
+        proceedBtn.onclick = () => {
           modal.classList.remove("open");
           resolve(true);
         };
@@ -2649,7 +2964,7 @@
       renderTable();
     });
 
-    // Mobiele sidebar sluiten -> Toon mini-player onderin als er een preview speelt
+    // Mobiele sidebar sluiten
     document.getElementById("btnCloseSidebarMobile").addEventListener("click", () => {
       document.getElementById("cdSidebar").classList.remove("mobile-open");
       updateMiniPlayerVisibility();
