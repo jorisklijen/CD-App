@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CD Collectie" />
+  <link rel="manifest" href="manifest.json" />
   <title>CD Collectie</title>
   <!-- SheetJS voor XLSX import/export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -20,6 +25,7 @@
       --text-muted: #6a6a6a;
       --border: #282828;
       --danger: #e91429;
+      --danger-hover: #ff2c40;
       --radius-sm: 6px;
       --radius-md: 8px;
       --radius-lg: 12px;
@@ -152,6 +158,17 @@
       transform: scale(1.02);
     }
 
+    .btn-danger {
+      background: rgba(233, 20, 41, 0.15);
+      color: #ff6b78;
+      border-color: rgba(233, 20, 41, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
     .btn-outline {
       border-color: var(--border);
       background: transparent;
@@ -262,6 +279,10 @@
       padding: 12px 14px;
       background: var(--bg-highlight);
       border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
     }
 
     .album-block-title {
@@ -274,6 +295,26 @@
     .album-block-meta {
       font-size: 0.8rem;
       color: var(--text-sub);
+    }
+
+    .icon-delete-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 5px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .icon-delete-btn:hover {
+      color: #ff4d5e;
+      background: rgba(233, 20, 41, 0.14);
+      border-color: rgba(233, 20, 41, 0.3);
     }
 
     .cd-track-list {
@@ -366,6 +407,13 @@
       color: var(--text-muted);
     }
 
+    .expanded-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     .expanded-song-title {
       font-size: 1.05rem;
       font-weight: 700;
@@ -381,8 +429,8 @@
 
     .preview-controls {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .play-preview-btn {
@@ -415,6 +463,145 @@
     .play-preview-btn svg {
       width: 16px;
       height: 16px;
+    }
+
+    /* Witte voortgangsbalk onder de preview in de sidebar */
+    .preview-progress-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .preview-progress-track.active {
+      display: block;
+    }
+
+    .preview-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #ffffff;
+      transition: width 0.1s linear;
+    }
+
+    /* Zwevende Mini-Player onderin (voor mobiel als venster gesloten is) */
+    .mobile-mini-player {
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      background: #141414;
+      border: 1px solid #2e2e2e;
+      border-radius: var(--radius-md);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
+      z-index: 95;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .mobile-mini-player.visible {
+      display: flex;
+    }
+
+    .mini-player-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+    }
+
+    .mini-player-close {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mini-player-close:hover {
+      color: var(--text-main);
+    }
+
+    .mini-player-thumb {
+      width: 38px;
+      height: 38px;
+      border-radius: 4px;
+      background: var(--bg-highlight);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+    }
+
+    .mini-player-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mini-player-thumb svg {
+      width: 18px;
+      height: 18px;
+      color: var(--text-muted);
+    }
+
+    .mini-player-info {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .mini-player-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-player-sub {
+      font-size: 0.74rem;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-player-toggle {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mini-player-bar-track {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .mini-player-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #ffffff;
+      transition: width 0.1s linear;
     }
 
     /* Right Content View */
@@ -619,11 +806,13 @@
       color: var(--accent);
     }
 
-    .col-index { width: 44px; text-align: center !important; cursor: default !important; }
-    .col-title { width: 38%; }
-    .col-album { width: 32%; }
-    .col-year  { width: 85px; }
-    .col-genre { width: 135px; }
+    .col-index  { width: 42px; text-align: center !important; cursor: default !important; }
+    .col-title  { width: 28%; }
+    .col-album  { width: 25%; }
+    .col-artist { width: 22%; }
+    .col-year   { width: 75px; }
+    .col-genre  { width: 120px; }
+    .col-action { width: 44px; text-align: center !important; cursor: default !important; }
 
     table.track-table tbody tr {
       border-radius: var(--radius-sm);
@@ -719,6 +908,21 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .artist-col-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .artist-col-name {
+      color: var(--text-main);
+      font-size: 0.86rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .artist-badge {
@@ -964,7 +1168,6 @@
         gap: 0;
       }
 
-      /* Sidebar als nette mobiele overlay die de database niet wegdrukt */
       .sidebar {
         position: fixed;
         inset: 0;
@@ -1031,19 +1234,21 @@
       }
 
       .table-container {
-        padding: 0 8px 20px;
+        padding: 0 8px 76px;
       }
 
-      /* Zorg dat ALLE kolommen (#, Titel/Artiest, Album+Nr, Jaar, Genre) zichtbaar en scrollbaar zijn op mobiel */
+      /* Zorg dat alle kolommen (#, Titel, Album+Nr, Artiest, Jaar, Genre, Verwijder) scrollbaar zijn op mobiel */
       table.track-table {
-        min-width: 580px;
+        min-width: 720px;
       }
 
-      .col-index { width: 34px; display: table-cell; }
-      .col-title { width: 210px; display: table-cell; }
-      .col-album { width: 165px; display: table-cell; }
-      .col-year  { width: 65px; display: table-cell; }
-      .col-genre { width: 106px; display: table-cell; }
+      .col-index  { width: 34px; display: table-cell; }
+      .col-title  { width: 190px; display: table-cell; }
+      .col-album  { width: 165px; display: table-cell; }
+      .col-artist { width: 145px; display: table-cell; }
+      .col-year   { width: 60px; display: table-cell; }
+      .col-genre  { width: 95px; display: table-cell; }
+      .col-action { width: 38px; display: table-cell; }
 
       table.track-table thead th {
         padding: 9px 6px;
@@ -1124,7 +1329,7 @@
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
         </svg>
-        Firebase
+        Database & Firebase
       </button>
     </div>
   </header>
@@ -1202,7 +1407,7 @@
               <th class="col-index">#</th>
               <th class="col-title" data-sort="title">
                 <div class="th-inner">
-                  <span>Titel / Artiest</span>
+                  <span>Titel</span>
                   <span class="sort-indicator" id="sort-title"></span>
                 </div>
               </th>
@@ -1210,6 +1415,12 @@
                 <div class="th-inner">
                   <span>Album + Nr</span>
                   <span class="sort-indicator" id="sort-album"></span>
+                </div>
+              </th>
+              <th class="col-artist" data-sort="artist">
+                <div class="th-inner">
+                  <span>Artiest</span>
+                  <span class="sort-indicator" id="sort-artist"></span>
                 </div>
               </th>
               <th class="col-year" data-sort="year">
@@ -1224,12 +1435,45 @@
                   <span class="sort-indicator" id="sort-genre"></span>
                 </div>
               </th>
+              <th class="col-action" title="Verwijderen"></th>
             </tr>
           </thead>
           <tbody id="trackTableBody"></tbody>
         </table>
       </div>
     </main>
+  </div>
+
+  <!-- Zwevende Mini-Player voor mobiel als het CD-venster gesloten is -->
+  <div class="mobile-mini-player" id="mobileMiniPlayer">
+    <div class="mini-player-inner">
+      <button class="mini-player-close" id="btnCloseMiniPlayer" title="Stop preview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <div class="mini-player-thumb" id="miniPlayerThumb"></div>
+      <div class="mini-player-info" id="miniPlayerOpenSidebar">
+        <div class="mini-player-title" id="miniPlayerTitle">Nummer</div>
+        <div class="mini-player-sub">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span id="miniPlayerArtist">Artiest</span>
+        </div>
+      </div>
+      <button class="mini-player-toggle" id="btnToggleMiniPlayer" title="Pauzeer / Speel">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+      </button>
+    </div>
+    <div class="mini-player-bar-track">
+      <div class="mini-player-bar-fill" id="miniPlayerProgressFill"></div>
+    </div>
   </div>
 
   <!-- Modal: Add Album or Single Track -->
@@ -1329,11 +1573,11 @@
     </div>
   </div>
 
-  <!-- Modal: Firebase Settings -->
+  <!-- Modal: Firebase Settings & Database Beheer -->
   <div class="modal-backdrop" id="firebaseModal">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">Firebase Database Koppeling</div>
+        <div class="modal-title">Database & Firebase Beheer</div>
         <button class="modal-close" id="btnCloseFirebaseModal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1343,36 +1587,39 @@
       </div>
       <div class="modal-body">
         <p style="font-size:0.85rem; color:var(--text-sub); line-height:1.5;">
-          Plak hieronder je Firebase configuratie (JSON of het <code>firebaseConfig</code> object uit de Firebase Console). De app synchroniseert alle nummers in blokken van 450 tegelijk zodat ook grote Excel-bestanden (3.500+ rijen) probleemloos worden opgeslagen.
+          Jouw Firebase-project (<code>cd-collectie-be8be</code>) staat hieronder ingesteld. Je kunt je lokale collectie naar Firebase sturen of indien gewenst de gehele database wissen.
         </p>
         <div class="form-group full">
           <label>Firebase Config JSON</label>
-          <textarea id="firebaseConfigInput" class="form-control" rows="7" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}'></textarea>
+          <textarea id="firebaseConfigInput" class="form-control" rows="6"></textarea>
         </div>
         <div class="progress-bar-wrap" id="syncProgressWrap">
           <div class="progress-bar-fill" id="syncProgressFill"></div>
         </div>
         <div id="syncStatusMsg" style="font-size:0.82rem; color:var(--text-sub);"></div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" id="btnPushLocalToFirebase">Huidige Collectie Uploaden naar Firebase</button>
-        <button class="btn btn-primary" id="btnSaveFirebaseConfig">Opslaan & Verbinden</button>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn btn-danger" id="btnClearEntireDatabase">Volledige Database Wissen</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-outline" id="btnPushLocalToFirebase">Collectie Uploaden naar Firebase</button>
+          <button class="btn btn-primary" id="btnSaveFirebaseConfig">Opslaan & Verbinden</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Duplicate Confirmation -->
+  <!-- Modal: Confirmation (Duplicates & Deletions) -->
   <div class="modal-backdrop" id="confirmModal">
     <div class="modal" style="max-width:460px;">
       <div class="modal-header">
-        <div class="modal-title">Dubbele Invoer Gevonden</div>
+        <div class="modal-title" id="confirmModalTitle">Bevestiging</div>
       </div>
       <div class="modal-body">
         <p id="confirmModalText" style="font-size:0.9rem; color:var(--text-sub); line-height:1.5;"></p>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" id="btnConfirmCancel">Overslaan</button>
-        <button class="btn btn-primary" id="btnConfirmProceed">Toch Toevoegen</button>
+        <button class="btn btn-outline" id="btnConfirmCancel">Annuleren</button>
+        <button class="btn btn-primary" id="btnConfirmProceed">Bevestigen</button>
       </div>
     </div>
   </div>
@@ -1386,8 +1633,19 @@
       collection,
       getDocs,
       writeBatch,
+      deleteDoc,
       doc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Standaard Firebase-configuratie van jouw project
+    const DEFAULT_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyCJ26FsOt937VVBBwrQuBKWI5Tf6CFajXE",
+      authDomain: "cd-collectie-be8be.firebaseapp.com",
+      projectId: "cd-collectie-be8be",
+      storageBucket: "cd-collectie-be8be.firebasestorage.app",
+      messagingSenderId: "583482943776",
+      appId: "1:583482943776:web:3d2f927f930d41efe48f45"
+    };
 
     // Volledige genre-mapping op basis van de 151 artiesten in 'cd collectie Ton.xlsx'
     const ARTIST_GENRE_MAP = {
@@ -1543,7 +1801,6 @@
       "UB 40": "Reggae"
     };
 
-    // Voorbeelddata als er nog niets geladen is
     const INITIAL_SAMPLE_DATA = [
       { id: "sample_1", artist: "Marillion", album: "Misplaced Childhood", nr: "1", title: "Pseudo Silk Kimono", year: 1985, genre: "Symfo", bandSolo: "band" },
       { id: "sample_2", artist: "Marillion", album: "Misplaced Childhood", nr: "2", title: "Kayleigh", year: 1985, genre: "Symfo", bandSolo: "band" },
@@ -1562,10 +1819,12 @@
     let sortState = { column: "title", direction: "asc" };
     let selectedGroupKey = null;
     let firestoreDb = null;
-    let addMode = "album"; // 'album' | 'single'
+    let addMode = "album";
     let fetchedAlbumTracks = null;
 
-    // Cache voor iTunes artwork & previews
+    // Audio Preview State
+    let currentPreviewMeta = null; // { trackId, title, artist, coverUrl }
+
     const mediaCache = JSON.parse(localStorage.getItem("cd_media_cache_v1") || "{}");
 
     const CD_SVG_ICON = `
@@ -1575,7 +1834,13 @@
       </svg>
     `;
 
-    // Hulpfuncties
+    const TRASH_SVG_ICON = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    `;
+
     function resolveGenre(rawGenre, artistName) {
       if (rawGenre && String(rawGenre).trim() !== "") {
         const clean = String(rawGenre).trim().toLowerCase();
@@ -1599,7 +1864,6 @@
       return String(a.nr).localeCompare(String(b.nr), undefined, { numeric: true, sensitivity: "base" });
     }
 
-    // Groepeer nummers die op meerdere albums voorkomen (zelfde artiest + titel)
     function getGroupedRows() {
       const map = new Map();
       for (const t of rawTracks) {
@@ -1625,7 +1889,6 @@
       return Array.from(map.values());
     }
 
-    // Filteren en sorteren
     function getFilteredAndSortedGroups() {
       let groups = getGroupedRows();
 
@@ -1635,7 +1898,6 @@
 
       if (searchQuery.trim() !== "") {
         const q = searchQuery.trim().toLowerCase();
-        // Zoek op alle criteria uit de XLSX behalve het tracknummer (nr)
         groups = groups.filter(g => {
           const matchTitle = g.title.toLowerCase().includes(q);
           const matchArtist = g.artist.toLowerCase().includes(q);
@@ -1658,6 +1920,9 @@
         } else if (sortState.column === "album") {
           valA = a.appearances[0]?.album || "";
           valB = b.appearances[0]?.album || "";
+        } else if (sortState.column === "artist") {
+          valA = a.artist;
+          valB = b.artist;
         } else if (sortState.column === "year") {
           valA = String(a.appearances[0]?.year || "");
           valB = String(b.appearances[0]?.year || "");
@@ -1671,13 +1936,14 @@
       return groups;
     }
 
-    // Render Genre Knoppen
     function renderGenres() {
       const container = document.getElementById("genreFilterContainer");
       const genreSet = new Set(["Alle"]);
       rawTracks.forEach(t => genreSet.add(resolveGenre(t.genre, t.artist)));
 
       const genres = Array.from(genreSet);
+      if (!genreSet.has(activeGenre)) activeGenre = "Alle";
+
       container.innerHTML = genres
         .map(g => `<button class="genre-pill ${g === activeGenre ? "active" : ""}" data-genre="${g}">${g}</button>`)
         .join("");
@@ -1691,9 +1957,8 @@
       });
     }
 
-    // Update Sortering Pijltjes
     function updateSortIndicators() {
-      ["title", "album", "year", "genre"].forEach(col => {
+      ["title", "album", "artist", "year", "genre"].forEach(col => {
         const el = document.getElementById(`sort-${col}`);
         if (!el) return;
         if (sortState.column === col) {
@@ -1706,7 +1971,6 @@
       });
     }
 
-    // Render Hoofdtabel
     function renderTable() {
       updateSortIndicators();
       const tbody = document.getElementById("trackTableBody");
@@ -1719,7 +1983,7 @@
       if (groups.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">
+            <td colspan="7" style="text-align:center; padding: 40px; color: var(--text-muted);">
               Geen nummers gevonden voor deze zoekopdracht of genre-selectie.
             </td>
           </tr>
@@ -1761,7 +2025,6 @@
                   <span class="song-title-text">${escapeHtml(g.title)}</span>
                   <span class="song-artist-text">
                     <span>${escapeHtml(g.artist)}</span>
-                    ${g.bandSolo ? `<span class="artist-badge">${escapeHtml(g.bandSolo)}</span>` : ""}
                   </span>
                 </div>
               </div>
@@ -1769,11 +2032,22 @@
             <td class="col-album">
               <div class="album-lines">${albumLinesHtml}</div>
             </td>
+            <td class="col-artist">
+              <div class="artist-col-wrap">
+                <span class="artist-col-name">${escapeHtml(g.artist)}</span>
+                ${g.bandSolo ? `<span class="artist-badge">${escapeHtml(g.bandSolo)}</span>` : ""}
+              </div>
+            </td>
             <td class="col-year">
               <div class="album-lines">${yearLinesHtml}</div>
             </td>
             <td class="col-genre">
               <span class="genre-badge">${escapeHtml(g.genre)}</span>
+            </td>
+            <td class="col-action">
+              <button class="icon-delete-btn btn-delete-group" data-groupkey="${escapeHtml(g.groupKey)}" title="Nummer verwijderen">
+                ${TRASH_SVG_ICON}
+              </button>
             </td>
           </tr>
         `;
@@ -1781,25 +2055,45 @@
 
       // Klik op rij -> Open CD in linkermenu
       tbody.querySelectorAll("tr[data-groupkey]").forEach(row => {
-        row.addEventListener("click", () => {
+        row.addEventListener("click", (e) => {
+          if (e.target.closest(".btn-delete-group")) return;
           selectedGroupKey = row.dataset.groupkey;
           renderTable();
           const groupObj = groups.find(item => item.groupKey === selectedGroupKey);
           if (groupObj) {
             renderSidebarForGroup(groupObj);
             document.getElementById("cdSidebar").classList.add("mobile-open");
+            updateMiniPlayerVisibility();
           }
+        });
+      });
+
+      // Verwijderknop per rij in de tabel
+      tbody.querySelectorAll(".btn-delete-group").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const gKey = btn.dataset.groupkey;
+          const groupObj = groups.find(item => item.groupKey === gKey);
+          if (!groupObj) return;
+
+          const confirmDelete = await askUserConfirmation(
+            "Nummer Verwijderen",
+            `Weet je zeker dat je "${groupObj.title}" van ${groupObj.artist} uit de database wilt verwijderen?`
+          );
+          if (!confirmDelete) return;
+
+          const idsToRemove = groupObj.appearances.map(ap => ap.id);
+          await deleteTracksByIds(idsToRemove);
         });
       });
 
       lazyFetchVisibleThumbnails();
     }
 
-    // Linkermenu (CD Weergave met in- en uitklapbare nummers)
+    // Linkermenu (CD Weergave met in- en uitklapbare nummers + voortgangsbalk + verwijderoptie)
     function renderSidebarForGroup(groupObj) {
       const container = document.getElementById("sidebarContent");
 
-      // Voor elk album waarop het nummer voorkomt een CD-blok tonen
       const blocksHtml = groupObj.appearances.map((ap, albumIdx) => {
         const albumTracks = rawTracks
           .filter(t => t.album.trim().toLowerCase() === ap.album.toLowerCase())
@@ -1824,13 +2118,23 @@
                 <div class="expanded-cover-wrap" id="exp-cover-${escapeHtml(track.id)}">
                   ${CD_SVG_ICON}
                 </div>
-                <div class="expanded-song-title">${escapeHtml(track.title)}</div>
-                <div class="expanded-song-artist" id="exp-artist-${escapeHtml(track.id)}">${escapeHtml(track.artist)}</div>
+                <div class="expanded-header-row">
+                  <div>
+                    <div class="expanded-song-title">${escapeHtml(track.title)}</div>
+                    <div class="expanded-song-artist" id="exp-artist-${escapeHtml(track.id)}">${escapeHtml(track.artist)}</div>
+                  </div>
+                  <button class="icon-delete-btn btn-delete-single-track" data-trackid="${escapeHtml(track.id)}" data-title="${escapeHtml(track.title)}" title="Dit nummer verwijderen">
+                    ${TRASH_SVG_ICON}
+                  </button>
+                </div>
                 <div class="preview-controls">
                   <button class="play-preview-btn" id="exp-play-${escapeHtml(track.id)}" disabled>
                     <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     <span>Preview zoeken...</span>
                   </button>
+                  <div class="preview-progress-track" id="exp-prog-wrap-${escapeHtml(track.id)}">
+                    <div class="preview-progress-fill" id="exp-prog-fill-${escapeHtml(track.id)}"></div>
+                  </div>
                 </div>
               </div>
             </li>
@@ -1840,8 +2144,13 @@
         return `
           <div class="album-block" data-album-index="${albumIdx}">
             <div class="album-block-header">
-              <div class="album-block-title">${escapeHtml(ap.album)}</div>
-              <div class="album-block-meta">${escapeHtml(groupObj.artist)} • ${escapeHtml(String(ap.year || ""))} • ${albumTracks.length} nummers</div>
+              <div>
+                <div class="album-block-title">${escapeHtml(ap.album)}</div>
+                <div class="album-block-meta">${escapeHtml(groupObj.artist)} • ${escapeHtml(String(ap.year || ""))} • ${albumTracks.length} nummers</div>
+              </div>
+              <button class="icon-delete-btn btn-delete-entire-album" data-album="${escapeHtml(ap.album)}" data-artist="${escapeHtml(groupObj.artist)}" title="Volledig album verwijderen">
+                ${TRASH_SVG_ICON}
+              </button>
             </div>
             <ul class="cd-track-list">
               ${itemsHtml}
@@ -1852,7 +2161,41 @@
 
       container.innerHTML = blocksHtml;
 
-      // Klik-interactie: op ingeklapt nummer drukken klapt huidige in en gekozen nummer uit
+      // Klik op heel album verwijderen
+      container.querySelectorAll(".btn-delete-entire-album").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const albumName = btn.dataset.album;
+          const artistName = btn.dataset.artist;
+          const matchingTracks = rawTracks.filter(
+            t => t.album.trim().toLowerCase() === albumName.trim().toLowerCase()
+          );
+
+          const confirmAlbumDel = await askUserConfirmation(
+            "Album Verwijderen",
+            `Weet je zeker dat je het volledige album "${albumName}" (${matchingTracks.length} nummers) uit de database wilt verwijderen?`
+          );
+          if (!confirmAlbumDel) return;
+
+          await deleteTracksByIds(matchingTracks.map(t => t.id));
+        });
+      });
+
+      // Klik op los nummer verwijderen vanuit de CD-weergave
+      container.querySelectorAll(".btn-delete-single-track").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const trackId = btn.dataset.trackid;
+          const trackTitle = btn.dataset.title;
+          const confirmTrackDel = await askUserConfirmation(
+            "Nummer Verwijderen",
+            `Weet je zeker dat je "${trackTitle}" van deze CD wilt verwijderen?`
+          );
+          if (!confirmTrackDel) return;
+          await deleteTracksByIds([trackId]);
+        });
+      });
+
+      // Klik-interactie voor in- en uitklappen van nummers
       container.querySelectorAll(".album-block").forEach(block => {
         const items = block.querySelectorAll(".cd-track-item");
         items.forEach(item => {
@@ -1864,7 +2207,6 @@
           });
         });
 
-        // Laad direct details voor het reeds uitgeklapte nummer
         const activeItem = block.querySelector(".cd-track-item.active");
         if (activeItem) {
           loadTrackDetailsInSidebar(activeItem);
@@ -1872,7 +2214,6 @@
       });
     }
 
-    // Haal online cover + audio-preview + eventuele gastartiesten op via iTunes Search API
     async function loadTrackDetailsInSidebar(itemEl) {
       const trackId = itemEl.dataset.trackid;
       const artist = itemEl.dataset.artist;
@@ -1899,17 +2240,29 @@
             localStorage.setItem("cd_media_cache_v1", JSON.stringify(mediaCache));
           }
 
-          if (match.artistName && artistEl) {
-            artistEl.textContent = match.artistName;
+          const displayArtist = match.artistName || artist;
+          if (artistEl) {
+            artistEl.textContent = displayArtist;
           }
 
           if (match.previewUrl && playBtn) {
             playBtn.disabled = false;
-            playBtn.innerHTML = `
-              <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Preview Afspelen (30s)</span>
-            `;
-            playBtn.onclick = () => togglePreviewAudio(match.previewUrl, playBtn);
+            const player = document.getElementById("globalAudioPlayer");
+            const isCurrentlyPlayingThis = player.src === match.previewUrl && !player.paused;
+
+            updatePlayButtonUI(playBtn, isCurrentlyPlayingThis);
+
+            if (isCurrentlyPlayingThis) {
+              const progWrap = document.getElementById(`exp-prog-wrap-${trackId}`);
+              if (progWrap) progWrap.classList.add("active");
+            }
+
+            playBtn.onclick = () => togglePreviewAudio(match.previewUrl, {
+              trackId,
+              title,
+              artist: displayArtist,
+              coverUrl: match.artworkUrl100 || null
+            });
           } else if (playBtn) {
             playBtn.disabled = true;
             playBtn.innerHTML = `<span>Geen online preview beschikbaar</span>`;
@@ -1926,29 +2279,242 @@
       }
     }
 
-    function togglePreviewAudio(previewUrl, btnEl) {
-      const player = document.getElementById("globalAudioPlayer");
-      if (player.src === previewUrl && !player.paused) {
-        player.pause();
-        btnEl.innerHTML = `
-          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          <span>Preview Afspelen (30s)</span>
-        `;
-      } else {
-        player.src = previewUrl;
-        player.play();
+    function updatePlayButtonUI(btnEl, isPlaying) {
+      if (!btnEl) return;
+      if (isPlaying) {
         btnEl.innerHTML = `
           <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
           <span>Pauzeren</span>
         `;
-        player.onended = () => {
-          btnEl.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            <span>Preview Afspelen (30s)</span>
-          `;
-        };
+      } else {
+        btnEl.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Preview Afspelen (30s)</span>
+        `;
       }
     }
+
+    function togglePreviewAudio(previewUrl, metaObj) {
+      const player = document.getElementById("globalAudioPlayer");
+      const playBtn = document.getElementById(`exp-play-${metaObj.trackId}`);
+
+      if (player.src === previewUrl && !player.paused) {
+        player.pause();
+        updatePlayButtonUI(playBtn, false);
+        updateMiniPlayerToggleIcon(false);
+      } else {
+        // Reset eventuele vorige balken
+        document.querySelectorAll(".preview-progress-track").forEach(el => el.classList.remove("active"));
+        document.querySelectorAll(".preview-progress-fill").forEach(el => { el.style.width = "0%"; });
+
+        currentPreviewMeta = metaObj;
+        if (player.src !== previewUrl) {
+          player.src = previewUrl;
+        }
+        player.play();
+
+        updatePlayButtonUI(playBtn, true);
+        const progWrap = document.getElementById(`exp-prog-wrap-${metaObj.trackId}`);
+        if (progWrap) progWrap.classList.add("active");
+
+        populateMiniPlayer(metaObj);
+        updateMiniPlayerToggleIcon(true);
+        updateMiniPlayerVisibility();
+      }
+    }
+
+    // Audio Player Events voor de groeiende witte voortgangsbalk & mini-player
+    const globalPlayer = document.getElementById("globalAudioPlayer");
+
+    globalPlayer.addEventListener("timeupdate", () => {
+      if (!globalPlayer.duration || !currentPreviewMeta) return;
+      const pct = Math.min(100, (globalPlayer.currentTime / globalPlayer.duration) * 100);
+
+      // Update witte balk onder de preview in de sidebar
+      const sidebarFill = document.getElementById(`exp-prog-fill-${currentPreviewMeta.trackId}`);
+      const sidebarWrap = document.getElementById(`exp-prog-wrap-${currentPreviewMeta.trackId}`);
+      if (sidebarWrap) sidebarWrap.classList.add("active");
+      if (sidebarFill) sidebarFill.style.width = `${pct}%`;
+
+      // Update witte balk onderin de mobiele mini-player
+      const miniFill = document.getElementById("miniPlayerProgressFill");
+      if (miniFill) miniFill.style.width = `${pct}%`;
+    });
+
+    globalPlayer.addEventListener("ended", () => {
+      if (currentPreviewMeta) {
+        const playBtn = document.getElementById(`exp-play-${currentPreviewMeta.trackId}`);
+        updatePlayButtonUI(playBtn, false);
+
+        const sidebarWrap = document.getElementById(`exp-prog-wrap-${currentPreviewMeta.trackId}`);
+        const sidebarFill = document.getElementById(`exp-prog-fill-${currentPreviewMeta.trackId}`);
+        if (sidebarWrap) sidebarWrap.classList.remove("active");
+        if (sidebarFill) sidebarFill.style.width = "0%";
+      }
+      const miniFill = document.getElementById("miniPlayerProgressFill");
+      if (miniFill) miniFill.style.width = "0%";
+
+      currentPreviewMeta = null;
+      document.getElementById("mobileMiniPlayer").classList.remove("visible");
+    });
+
+    function populateMiniPlayer(meta) {
+      document.getElementById("miniPlayerTitle").textContent = meta.title;
+      document.getElementById("miniPlayerArtist").textContent = meta.artist;
+      const thumbEl = document.getElementById("miniPlayerThumb");
+      if (meta.coverUrl) {
+        thumbEl.innerHTML = `<img src="${meta.coverUrl}" alt="Cover" />`;
+      } else {
+        thumbEl.innerHTML = CD_SVG_ICON;
+      }
+    }
+
+    function updateMiniPlayerToggleIcon(isPlaying) {
+      const btn = document.getElementById("btnToggleMiniPlayer");
+      if (isPlaying) {
+        btn.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+        `;
+      } else {
+        btn.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        `;
+      }
+    }
+
+    function updateMiniPlayerVisibility() {
+      const miniPlayer = document.getElementById("mobileMiniPlayer");
+      const sidebarOpenOnMobile = document.getElementById("cdSidebar").classList.contains("mobile-open");
+      const isMobileViewport = window.innerWidth <= 900;
+
+      // Toon mini-speler onderin wanneer er een preview actief is en op mobiel het venster is gesloten
+      if (currentPreviewMeta && (!isMobileViewport || !sidebarOpenOnMobile)) {
+        if (isMobileViewport) {
+          miniPlayer.classList.add("visible");
+        } else {
+          miniPlayer.classList.remove("visible");
+        }
+      } else {
+        miniPlayer.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("resize", updateMiniPlayerVisibility);
+
+    document.getElementById("btnCloseMiniPlayer").addEventListener("click", () => {
+      globalPlayer.pause();
+      globalPlayer.currentTime = 0;
+      if (currentPreviewMeta) {
+        const playBtn = document.getElementById(`exp-play-${currentPreviewMeta.trackId}`);
+        updatePlayButtonUI(playBtn, false);
+        const sidebarWrap = document.getElementById(`exp-prog-wrap-${currentPreviewMeta.trackId}`);
+        if (sidebarWrap) sidebarWrap.classList.remove("active");
+      }
+      currentPreviewMeta = null;
+      document.getElementById("mobileMiniPlayer").classList.remove("visible");
+    });
+
+    document.getElementById("btnToggleMiniPlayer").addEventListener("click", () => {
+      if (!currentPreviewMeta) return;
+      const playBtn = document.getElementById(`exp-play-${currentPreviewMeta.trackId}`);
+      if (globalPlayer.paused) {
+        globalPlayer.play();
+        updateMiniPlayerToggleIcon(true);
+        updatePlayButtonUI(playBtn, true);
+      } else {
+        globalPlayer.pause();
+        updateMiniPlayerToggleIcon(false);
+        updatePlayButtonUI(playBtn, false);
+      }
+    });
+
+    document.getElementById("miniPlayerOpenSidebar").addEventListener("click", () => {
+      document.getElementById("cdSidebar").classList.add("mobile-open");
+      updateMiniPlayerVisibility();
+    });
+
+    // Verwijder-functies (Lokaal + Firebase)
+    async function deleteTracksByIds(idsArray) {
+      if (!idsArray || idsArray.length === 0) return;
+      const idSet = new Set(idsArray);
+      rawTracks = rawTracks.filter(t => !idSet.has(t.id));
+      saveLocalTracks();
+
+      if (firestoreDb) {
+        const BATCH_SIZE = 450;
+        for (let i = 0; i < idsArray.length; i += BATCH_SIZE) {
+          const chunk = idsArray.slice(i, i + BATCH_SIZE);
+          const batch = writeBatch(firestoreDb);
+          chunk.forEach(id => {
+            batch.delete(doc(collection(firestoreDb, "tracks"), id));
+          });
+          await batch.commit();
+        }
+      }
+
+      renderGenres();
+      renderTable();
+
+      // Bijwerken van de sidebar als het geselecteerde nummer nog bestaat, anders legen
+      const remainingGroups = getGroupedRows();
+      const stillExists = remainingGroups.find(g => g.groupKey === selectedGroupKey);
+      if (stillExists) {
+        renderSidebarForGroup(stillExists);
+      } else {
+        selectedGroupKey = null;
+        document.getElementById("sidebarContent").innerHTML = `
+          <div class="empty-sidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <p>Klik op een nummer in de lijst om de bijbehorende CD, albumhoes en audio-preview te bekijken.</p>
+          </div>
+        `;
+        document.getElementById("cdSidebar").classList.remove("mobile-open");
+      }
+    }
+
+    // Volledige database wissen
+    document.getElementById("btnClearEntireDatabase").addEventListener("click", async () => {
+      const proceed = await askUserConfirmation(
+        "Volledige Database Wissen",
+        `Weet je zeker dat je ALLE ${rawTracks.length} nummers uit de app én uit Firebase wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`
+      );
+      if (!proceed) return;
+
+      const allIds = rawTracks.map(t => t.id);
+      const wrap = document.getElementById("syncProgressWrap");
+      const fill = document.getElementById("syncProgressFill");
+      const msg = document.getElementById("syncStatusMsg");
+
+      if (firestoreDb && allIds.length > 0) {
+        wrap.style.display = "block";
+        const BATCH_SIZE = 450;
+        for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
+          const chunk = allIds.slice(i, i + BATCH_SIZE);
+          const batch = writeBatch(firestoreDb);
+          chunk.forEach(id => {
+            batch.delete(doc(collection(firestoreDb, "tracks"), id));
+          });
+          await batch.commit();
+          const done = Math.min(i + BATCH_SIZE, allIds.length);
+          fill.style.width = `${Math.round((done / allIds.length) * 100)}%`;
+          msg.textContent = `Firebase wissen: ${done} / ${allIds.length} verwijderd...`;
+        }
+      }
+
+      rawTracks = [];
+      saveLocalTracks();
+      renderGenres();
+      renderTable();
+      msg.textContent = "De volledige database is gewist.";
+    });
 
     // Achtergrond-ophaler voor kleine album-thumbnails in de tabel
     let thumbQueueRunning = false;
@@ -2016,7 +2582,6 @@
         });
       }
 
-      // Check op dubbele albums
       const existingAlbums = new Set(rawTracks.map(t => `${t.artist.toLowerCase()}|||${t.album.toLowerCase()}`));
       const duplicateAlbums = new Set();
       parsed.forEach(p => {
@@ -2025,7 +2590,8 @@
       });
 
       if (duplicateAlbums.size > 0) {
-        const proceed = await askDuplicateConfirmation(
+        const proceed = await askUserConfirmation(
+          "Dubbele Invoer Gevonden",
           `Er staan ${duplicateAlbums.size} album(s) in het Excel-bestand die al in de collectie voorkomen (waaronder ${Array.from(duplicateAlbums).slice(0, 3).join(", ")}). Wil je het bestand alsnog importeren en samenvoegen?`
         );
         if (!proceed) {
@@ -2045,9 +2611,10 @@
       e.target.value = "";
     });
 
-    function askDuplicateConfirmation(message) {
+    function askUserConfirmation(title, message) {
       return new Promise(resolve => {
         const modal = document.getElementById("confirmModal");
+        document.getElementById("confirmModalTitle").textContent = title;
         document.getElementById("confirmModalText").textContent = message;
         modal.classList.add("open");
 
@@ -2082,9 +2649,10 @@
       renderTable();
     });
 
-    // Mobiele sidebar sluiten
+    // Mobiele sidebar sluiten -> Toon mini-player onderin als er een preview speelt
     document.getElementById("btnCloseSidebarMobile").addEventListener("click", () => {
       document.getElementById("cdSidebar").classList.remove("mobile-open");
+      updateMiniPlayerVisibility();
     });
 
     // Modal: Toevoegen (Album of Los Nummer)
@@ -2184,7 +2752,8 @@
         );
 
         if (exists) {
-          const proceed = await askDuplicateConfirmation(
+          const proceed = await askUserConfirmation(
+            "Dubbel Album Gevonden",
             `Het album "${fetchedAlbumTracks[0].album}" van ${fetchedAlbumTracks[0].artist} staat al in de collectie. Weet je zeker dat je dit album nogmaals wilt toevoegen?`
           );
           if (!proceed) return;
@@ -2223,7 +2792,8 @@
         );
 
         if (duplicateTrack) {
-          const proceed = await askDuplicateConfirmation(
+          const proceed = await askUserConfirmation(
+            "Dubbel Nummer Gevonden",
             `Het nummer "${title}" op album "${album}" van ${artist} bestaat al. Toch toevoegen?`
           );
           if (!proceed) return;
@@ -2249,17 +2819,16 @@
       }
     });
 
-    // Lokaal opslaan als backup
     function saveLocalTracks() {
       try {
         localStorage.setItem("cd_collectie_tracks_v1", JSON.stringify(rawTracks));
       } catch (e) {}
     }
 
-    // Firebase Modal & Synchronisatie (Chunked per 450 items)
+    // Firebase Modal & Synchronisatie
     const firebaseModal = document.getElementById("firebaseModal");
     document.getElementById("btnOpenFirebaseModal").addEventListener("click", () => {
-      const saved = localStorage.getItem("cd_firebase_config_v1") || "";
+      const saved = localStorage.getItem("cd_firebase_config_v1") || JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
       document.getElementById("firebaseConfigInput").value = saved;
       firebaseModal.classList.add("open");
     });
@@ -2279,7 +2848,7 @@
         await connectToFirebase(parsedConfig);
         firebaseModal.classList.remove("open");
       } catch (err) {
-        alert("Ongeldige Firebase configuratie. Controleer of alle sleutels (apiKey, projectId, etc.) aanwezig zijn.");
+        alert("Ongeldige Firebase configuratie. Controleer of alle sleutels aanwezig zijn.");
       }
     });
 
@@ -2346,6 +2915,13 @@
         .replace(/"/g, "&quot;");
     }
 
+    // Service Worker Registratie voor PWA
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
     // Initialisatie bij opstarten
     (async function init() {
       const savedTracks = localStorage.getItem("cd_collectie_tracks_v1");
@@ -2363,11 +2939,10 @@
       renderTable();
 
       const savedFirebase = localStorage.getItem("cd_firebase_config_v1");
-      if (savedFirebase) {
-        try {
-          await connectToFirebase(JSON.parse(savedFirebase));
-        } catch (e) {}
-      }
+      const configToUse = savedFirebase ? JSON.parse(savedFirebase) : DEFAULT_FIREBASE_CONFIG;
+      try {
+        await connectToFirebase(configToUse);
+      } catch (e) {}
     })();
   </script>
 </body>
