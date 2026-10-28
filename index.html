@@ -1888,6 +1888,78 @@
       "UB 40": "Reggae"
     };
 
+    // Specifieke vertaaltabel om omgekeerde namen & spelfouten uit het Excel-bestand
+    // feilloos te vertalen naar de officiële artiestnaam voor de iTunes zoekopdracht.
+    const ARTIST_SEARCH_ALIASES = {
+      "alan parson project the": "The Alan Parsons Project",
+      "giersbergen anneke / lucassen arjen": "Anneke van Giersbergen Arjen Lucassen",
+      "giersbergen anneke van": "Anneke van Giersbergen",
+      "giersbergen anneke van/aqua de annique": "Anneke van Giersbergen",
+      "giersbergen anneke van / arstider": "Anneke van Giersbergen Árstíðir",
+      "gilmour david": "David Gilmour",
+      "oldfield mike": "Mike Oldfield",
+      "waters roger": "Roger Waters",
+      "wayne jeff": "Jeff Wayne",
+      "whitin temptation": "Within Temptation",
+      "brood herman & his wild romance": "Herman Brood & His Wild Romance",
+      "dijk, de": "De Dijk",
+      "golden earing": "Golden Earring",
+      "groot, boudewijn de": "Boudewijn de Groot",
+      "visser eefje de": "Eefje de Visser",
+      "clark, anne": "Anne Clark",
+      "clash, the": "The Clash",
+      "cult the": "The Cult",
+      "mission the": "The Mission",
+      "schilling, peter": "Peter Schilling",
+      "cranberries the": "The Cranberries",
+      "emotional fish an": "An Emotional Fish",
+      "ete gina": "Gina Éte",
+      "etheridge melissa": "Melissa Etheridge",
+      "gathering the": "The Gathering",
+      "habitans": "Habitants",
+      "harvey pj": "PJ Harvey",
+      "höyem sivert": "Sivert Høyem",
+      "jezabels": "The Jezabels",
+      "kravitz, lenny": "Lenny Kravitz",
+      "manson marilyn & bates, tyler": "Marilyn Manson Tyler Bates",
+      "nirvanna": "Nirvana",
+      "pop iggy": "Iggy Pop",
+      "rem": "R.E.M.",
+      "sugercubes": "The Sugarcubes",
+      "vedder eddie": "Eddie Vedder",
+      "waterboys": "The Waterboys",
+      "xx the": "The xx",
+      "beach boys the": "The Beach Boys",
+      "bowie david": "David Bowie",
+      "bowie, david": "David Bowie",
+      "carpenters, the": "Carpenters",
+      "clapton eric": "Eric Clapton",
+      "gabriel peter": "Peter Gabriel",
+      "hendrix jimi": "Jimi Hendrix",
+      "kinks, the": "The Kinks",
+      "michael, george": "George Michael",
+      "presley elvis": "Elvis Presley",
+      "wonder": "Stevie Wonder",
+      "brun ane": "Ane Brun",
+      "buckley jeff": "Jeff Buckley",
+      "cash, johnny": "Johnny Cash",
+      "cohen, lennard": "Leonard Cohen",
+      "cohen, leonard": "Leonard Cohen",
+      "conner o sinead": "Sinéad O'Connor",
+      "drake nick": "Nick Drake",
+      "dybdahl thomas": "Thomas Dybdahl",
+      "janssen kim": "Kim Janssen",
+      "lindgren, richard": "Richard Lindgren",
+      "melua, katie": "Katie Melua",
+      "rey del, lana": "Lana Del Rey",
+      "rice damian": "Damian Rice",
+      "bates, tyler": "Tyler Bates",
+      "jones, trevor": "Trevor Jones",
+      "marley bob": "Bob Marley",
+      "marley, bob": "Bob Marley",
+      "ub 40": "UB40"
+    };
+
     const INITIAL_SAMPLE_DATA = [
       { id: "sample_1", artist: "Marillion", album: "Misplaced Childhood", nr: "1", title: "Pseudo Silk Kimono", year: 1985, genre: "Symfo", bandSolo: "band" },
       { id: "sample_2", artist: "Marillion", album: "Misplaced Childhood", nr: "2", title: "Kayleigh", year: 1985, genre: "Symfo", bandSolo: "band" },
@@ -1911,7 +1983,9 @@
     let currentPreviewMeta = null;
     let currentEditingGroup = null;
 
-    const mediaCache = JSON.parse(localStorage.getItem("cd_media_cache_v1") || "{}");
+    // Versie v3 voor de mediaCache zodat oude foutieve Ariana Grande / foute covers direct gewist zijn
+    const MEDIA_CACHE_STORAGE_KEY = "cd_media_cache_v3";
+    const mediaCache = JSON.parse(localStorage.getItem(MEDIA_CACHE_STORAGE_KEY) || "{}");
 
     const CD_SVG_ICON = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -1933,6 +2007,276 @@
         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
       </svg>
     `;
+
+    // ============================================================================
+    // WATERDICHTE ZOEK- & VERIFICATIE-FUNCTIES VOOR ITUNES PREVIEW EN ALBUMHOEZEN
+    // ============================================================================
+
+    function normalizeText(str) {
+      return String(str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // verwijder accenten
+        .replace(/['’`´]/g, "")
+        .replace(/&/g, " and ")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    // Zet namen als "Drake Nick", "Dijk, de", "Cult The" of "Golden Earing" om naar de juiste zoeknaam
+    function getCanonicalSearchArtist(rawArtist) {
+      const trimmed = String(rawArtist || "").trim();
+      const lower = trimmed.toLowerCase();
+
+      if (ARTIST_SEARCH_ALIASES[lower]) {
+        return ARTIST_SEARCH_ALIASES[lower];
+      }
+
+      // Als er een komma in staat (bijv. "Groot, Boudewijn de" of "Clash, the")
+      if (trimmed.includes(",")) {
+        const parts = trimmed.split(",").map(s => s.trim()).filter(Boolean);
+        if (parts.length === 2) {
+          return `${parts[1]} ${parts[0]}`.trim();
+        }
+      }
+
+      // Als het eindigt op " The" of " An" (bijv. "Cranberries The")
+      const suffixMatch = trimmed.match(/^(.*)\s+(The|An|De|Het)$/i);
+      if (suffixMatch) {
+        return `${suffixMatch[2]} ${suffixMatch[1]}`.trim();
+      }
+
+      return trimmed;
+    }
+
+    // Bereken Levenshtein-afstand voor kleine spelfouten zoals "Earing" vs "Earring" of "Whitin" vs "Within"
+    function levenshteinDistance(a, b) {
+      if (a === b) return 0;
+      if (!a.length) return b.length;
+      if (!b.length) return a.length;
+      const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+      for (let j = 1; j <= b.length; j++) matrix[0][j] = j;
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + cost
+          );
+        }
+      }
+      return matrix[a.length][b.length];
+    }
+
+    function wordsRoughlyMatch(w1, w2) {
+      if (w1 === w2) return true;
+      if (w1.length >= 4 && w2.length >= 4) {
+        if (w1.startsWith(w2) || w2.startsWith(w1)) return true;
+        const maxDist = w1.length >= 7 ? 2 : 1;
+        if (levenshteinDistance(w1, w2) <= maxDist) return true;
+      }
+      return false;
+    }
+
+    const STOP_WORDS = new Set(["the", "and", "de", "het", "van", "een", "an", "of", "in", "on", "to", "for", "with"]);
+
+    function getSignificantTokens(str) {
+      const all = normalizeText(str).split(" ").filter(Boolean);
+      const filtered = all.filter(w => !STOP_WORDS.has(w) && w.length > 1);
+      return filtered.length > 0 ? filtered : all;
+    }
+
+    // Controleer streng of de iTunes-artiest écht overeenkomt met de artiest uit de collectie
+    function isArtistVerified(localArtist, itunesArtist) {
+      if (!itunesArtist) return false;
+      const canonicalLocal = getCanonicalSearchArtist(localArtist);
+
+      const normLocal = normalizeText(canonicalLocal);
+      const normItunes = normalizeText(itunesArtist);
+
+      if (!normLocal || !normItunes) return false;
+      if (normLocal === normItunes) return true;
+      if (normItunes.includes(normLocal) || normLocal.includes(normItunes)) return true;
+
+      const localTokens = getSignificantTokens(canonicalLocal);
+      const itunesTokens = getSignificantTokens(itunesArtist);
+
+      if (localTokens.length === 0 || itunesTokens.length === 0) return false;
+
+      let matchedCount = 0;
+      for (const lt of localTokens) {
+        if (itunesTokens.some(it => wordsRoughlyMatch(lt, it))) {
+          matchedCount++;
+        }
+      }
+
+      const ratio = matchedCount / localTokens.length;
+      // Bij 1 of 2 woorden (bijv. "Golden Earing") moeten ALLE woorden (eventueel met kleine typo-tolerantie) matchen!
+      if (localTokens.length <= 2) {
+        return matchedCount === localTokens.length;
+      }
+      return ratio >= 0.66;
+    }
+
+    // Maak een nummertitel of albumtitel schoon (verwijder "(Remastered 2011)", "- Single", etc.)
+    function cleanMusicTitle(rawTitle) {
+      return String(rawTitle || "")
+        .replace(/\(.*?(remaster|live|version|edit|mix|deluxe|bonus|anniversary|mono|stereo).*?\)/gi, "")
+        .replace(/\[.*?(remaster|live|version|edit|mix|deluxe|bonus|anniversary|mono|stereo).*?\]/gi, "")
+        .replace(/-\s*(single|ep|remastered.*|live.*|deluxe.*)/gi, "")
+        .trim();
+    }
+
+    // Controleer streng of de gevonden nummertitel overeenkomt met de gezochte titel
+    function isTrackTitleVerified(localTitle, itunesTrackName) {
+      if (!itunesTrackName) return false;
+      const cleanLocal = normalizeText(cleanMusicTitle(localTitle));
+      const cleanItunes = normalizeText(cleanMusicTitle(itunesTrackName));
+
+      if (!cleanLocal || !cleanItunes) return false;
+      if (cleanLocal === cleanItunes) return true;
+
+      // Als de ene titel volledig in de andere zit (bijv. "What Goes Up" in "What Goes Up...")
+      if (cleanLocal.length >= 4 && cleanItunes.length >= 4) {
+        if (cleanItunes.startsWith(cleanLocal) || cleanLocal.startsWith(cleanItunes)) return true;
+      }
+
+      const localTokens = getSignificantTokens(cleanLocal);
+      const itunesTokens = getSignificantTokens(cleanItunes);
+
+      if (localTokens.length === 0) {
+        // Titel bestaat alleen uit stopwoorden (zoals het nummer "If" van Pink Floyd)
+        return cleanLocal === cleanItunes;
+      }
+
+      let matches = 0;
+      for (const lt of localTokens) {
+        if (itunesTokens.some(it => wordsRoughlyMatch(lt, it))) {
+          matches++;
+        }
+      }
+
+      // Als de titel maar uit 1 of 2 kernwoorden bestaat, moeten ze allemaal raken
+      if (localTokens.length <= 2) {
+        return matches === localTokens.length;
+      }
+      return (matches / localTokens.length) >= 0.7;
+    }
+
+    // Controleer of een albumtitel overeenkomt (voor de albumhoes)
+    function isAlbumTitleVerified(localAlbum, itunesCollectionName) {
+      if (!localAlbum || !itunesCollectionName) return false;
+      const cleanLocal = normalizeText(cleanMusicTitle(localAlbum));
+      const cleanItunes = normalizeText(cleanMusicTitle(itunesCollectionName));
+
+      if (!cleanLocal || !cleanItunes) return false;
+      if (cleanLocal === cleanItunes) return true;
+      if (cleanItunes.includes(cleanLocal) || cleanLocal.includes(cleanItunes)) return true;
+
+      const localTokens = getSignificantTokens(cleanLocal);
+      const itunesTokens = getSignificantTokens(cleanItunes);
+      if (localTokens.length === 0) return cleanLocal === cleanItunes;
+
+      let matches = 0;
+      for (const lt of localTokens) {
+        if (itunesTokens.some(it => wordsRoughlyMatch(lt, it))) {
+          matches++;
+        }
+      }
+
+      return (matches / localTokens.length) >= 0.65;
+    }
+
+    // Zoek en verifieer een nummer voor de sidebar preview
+    async function findVerifiedTrackOnItunes(artist, album, title, year) {
+      const searchArtist = getCanonicalSearchArtist(artist);
+      const cleanTitle = cleanMusicTitle(title);
+
+      // Poging 1: Zoek op opgeschoonde Artiest + Titel (+ Album)
+      const queries = [
+        `${searchArtist} ${cleanTitle} ${album || ""}`.trim(),
+        `${searchArtist} ${cleanTitle}`.trim()
+      ];
+
+      for (const qText of queries) {
+        const query = encodeURIComponent(qText);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=25`);
+        const data = await res.json();
+
+        if (!data.results || data.results.length === 0) continue;
+
+        const candidates = [];
+
+        for (const item of data.results) {
+          // STAP 1: Artiest MOET overeenkomen (beschermt direct tegen Ariana Grande bij Golden Earring)
+          if (!isArtistVerified(artist, item.artistName)) continue;
+
+          // STAP 2: Nummertitel MOET overeenkomen
+          if (!isTrackTitleVerified(title, item.trackName)) continue;
+
+          let score = 100;
+
+          // STAP 3: Bonus als het op hetzelfde album staat
+          const albumMatches = isAlbumTitleVerified(album, item.collectionName);
+          if (albumMatches) {
+            score += 50;
+          }
+
+          // STAP 4: Jaartal-check (voorkom anachronismen, maar sta remasters van dezelfde artiest toe)
+          const itemYear = item.releaseDate ? new Date(item.releaseDate).getFullYear() : null;
+          const localYear = parseInt(year, 10);
+          if (localYear && itemYear) {
+            const yearDiff = Math.abs(itemYear - localYear);
+            if (yearDiff <= 2) {
+              score += 30; // Originele release jaar klopt bijna exact
+            } else if (itemYear < localYear - 3) {
+              score -= 20;
+            }
+          }
+
+          // Geef de voorkeur aan studio-albumversies boven latere live- of karaoke-versies
+          const lowerTrack = String(item.trackName || "").toLowerCase();
+          if (! normalizeText(title).includes("live") && lowerTrack.includes("live")) {
+            score -= 15;
+          }
+
+          candidates.push({ item, score, albumMatches });
+        }
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => b.score - a.score);
+          return candidates[0];
+        }
+      }
+
+      return null;
+    }
+
+    // Zoek en verifieer specifiek de albumhoes voor een (Artiest + Album) combinatie
+    async function findVerifiedAlbumCoverOnItunes(artist, album) {
+      if (!artist || !album) return null;
+      const searchArtist = getCanonicalSearchArtist(artist);
+      const q = encodeURIComponent(`${searchArtist} ${album}`);
+
+      try {
+        const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=15`);
+        const data = await res.json();
+        if (!data.results || data.results.length === 0) return null;
+
+        for (const item of data.results) {
+          if (isArtistVerified(artist, item.artistName) && isAlbumTitleVerified(album, item.collectionName)) {
+            if (item.artworkUrl100) {
+              return item.artworkUrl100;
+            }
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    // ============================================================================
 
     function resolveGenre(rawGenre, artistName) {
       if (rawGenre && String(rawGenre).trim() !== "") {
@@ -2049,7 +2393,6 @@
         });
       });
 
-      // Vul ook de genre-suggestielijst in het bewerk-venster
       const datalist = document.getElementById("genreSuggestionsList");
       if (datalist) {
         datalist.innerHTML = genres
@@ -2176,7 +2519,6 @@
         });
       });
 
-      // Bewerken-knop per rij
       tbody.querySelectorAll(".btn-edit-group").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -2186,7 +2528,6 @@
         });
       });
 
-      // Verwijder-knop per rij
       tbody.querySelectorAll(".btn-delete-group").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           e.stopPropagation();
@@ -2208,7 +2549,6 @@
       lazyFetchVisibleThumbnails();
     }
 
-    // Open en vul de Bewerk-modal
     function openEditModalForGroup(groupObj) {
       currentEditingGroup = groupObj;
       document.getElementById("editTitleInput").value = groupObj.title;
@@ -2301,7 +2641,6 @@
             track.artist = newArtist;
             track.genre = finalGenre;
             if (newBandSolo) track.bandSolo = newBandSolo;
-            // Als er maar 1 album bij deze regel hoorde en de albumnaam is gecorrigeerd, neem die ook mee
             if (apCards.length === 1) {
               const singleUpdatedAlbum = apUpdates.values().next().value.album;
               if (singleUpdatedAlbum) track.album = singleUpdatedAlbum;
@@ -2333,8 +2672,13 @@
       const container = document.getElementById("sidebarContent");
 
       const blocksHtml = groupObj.appearances.map((ap, albumIdx) => {
+        // Filter nu op zowel Album ALS Artiest zodat gelijknamige albums (bijv. 'Greatest Hits') nooit mengen
         const albumTracks = rawTracks
-          .filter(t => t.album.trim().toLowerCase() === ap.album.toLowerCase())
+          .filter(
+            t =>
+              t.album.trim().toLowerCase() === ap.album.toLowerCase() &&
+              t.artist.trim().toLowerCase() === groupObj.artist.toLowerCase()
+          )
           .sort(naturalTrackSort);
 
         const itemsHtml = albumTracks.map(track => {
@@ -2347,7 +2691,8 @@
                 data-trackid="${escapeHtml(track.id)}"
                 data-artist="${escapeHtml(track.artist)}"
                 data-album="${escapeHtml(track.album)}"
-                data-title="${escapeHtml(track.title)}">
+                data-title="${escapeHtml(track.title)}"
+                data-year="${escapeHtml(String(track.year || ""))}">
               <div class="cd-track-collapsed">
                 <span class="cd-track-num">${escapeHtml(String(track.nr))}</span>
                 <span class="cd-track-name">${escapeHtml(track.title)}</span>
@@ -2407,13 +2752,16 @@
       container.querySelectorAll(".btn-delete-entire-album").forEach(btn => {
         btn.addEventListener("click", async () => {
           const albumName = btn.dataset.album;
+          const artistName = btn.dataset.artist;
           const matchingTracks = rawTracks.filter(
-            t => t.album.trim().toLowerCase() === albumName.trim().toLowerCase()
+            t =>
+              t.album.trim().toLowerCase() === albumName.trim().toLowerCase() &&
+              t.artist.trim().toLowerCase() === artistName.trim().toLowerCase()
           );
 
           const confirmAlbumDel = await askUserConfirmation(
             "Album Verwijderen",
-            `Weet je zeker dat je het volledige album "${albumName}" (${matchingTracks.length} nummers) uit de database wilt verwijderen?`
+            `Weet je zeker dat je het volledige album "${albumName}" van ${artistName} (${matchingTracks.length} nummers) uit de database wilt verwijderen?`
           );
           if (!confirmAlbumDel) return;
 
@@ -2470,30 +2818,44 @@
       const artist = itemEl.dataset.artist;
       const album = itemEl.dataset.album;
       const title = itemEl.dataset.title;
+      const year = itemEl.dataset.year;
 
       const coverEl = document.getElementById(`exp-cover-${trackId}`);
       const artistEl = document.getElementById(`exp-artist-${trackId}`);
       const playBtn = document.getElementById(`exp-play-${trackId}`);
 
+      // Zorg dat ALTIJD de eigen artiestnaam uit de database zichtbaar blijft
+      if (artistEl) {
+        artistEl.textContent = artist;
+      }
+
       try {
-        const query = encodeURIComponent(`${artist} ${title}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=5`);
-        const data = await res.json();
+        const verifiedResult = await findVerifiedTrackOnItunes(artist, album, title, year);
+        const cacheKey = `${artist}|||${album}`.toLowerCase();
 
-        if (data.results && data.results.length > 0) {
-          const match = data.results[0];
-          const hiResCover = match.artworkUrl100 ? match.artworkUrl100.replace("100x100bb", "600x600bb") : null;
+        // Bepaal eerst of we een geverifieerde albumhoes hebben
+        let verifiedThumbUrl = mediaCache[cacheKey]?.artworkUrl || null;
 
-          if (hiResCover && coverEl) {
-            coverEl.innerHTML = `<img src="${hiResCover}" alt="${escapeHtml(album)}" />`;
-            const cacheKey = `${artist}|||${album}`.toLowerCase();
-            mediaCache[cacheKey] = { artworkUrl: match.artworkUrl100 };
-            localStorage.setItem("cd_media_cache_v1", JSON.stringify(mediaCache));
+        if (verifiedResult) {
+          const match = verifiedResult.item;
+
+          // Gebruik de hoes van de track alleen als het album overeenkomt of als we nog geen albumhoes hebben
+          if (verifiedResult.albumMatches && match.artworkUrl100) {
+            verifiedThumbUrl = match.artworkUrl100;
+            mediaCache[cacheKey] = { artworkUrl: verifiedThumbUrl };
+            localStorage.setItem(MEDIA_CACHE_STORAGE_KEY, JSON.stringify(mediaCache));
+          } else if (!verifiedThumbUrl) {
+            const albumCover = await findVerifiedAlbumCoverOnItunes(artist, album);
+            verifiedThumbUrl = albumCover || match.artworkUrl100 || null;
+            if (albumCover) {
+              mediaCache[cacheKey] = { artworkUrl: albumCover };
+              localStorage.setItem(MEDIA_CACHE_STORAGE_KEY, JSON.stringify(mediaCache));
+            }
           }
 
-          const displayArtist = match.artistName || artist;
-          if (artistEl) {
-            artistEl.textContent = displayArtist;
+          if (verifiedThumbUrl && coverEl) {
+            const hiResCover = verifiedThumbUrl.replace("100x100bb", "600x600bb");
+            coverEl.innerHTML = `<img src="${hiResCover}" alt="${escapeHtml(album)}" />`;
           }
 
           if (match.previewUrl && playBtn) {
@@ -2511,16 +2873,33 @@
             playBtn.onclick = () => togglePreviewAudio(match.previewUrl, {
               trackId,
               title,
-              artist: displayArtist,
-              coverUrl: match.artworkUrl100 || null
+              artist, // Gebruik altijd de echte artiest uit onze database
+              coverUrl: verifiedThumbUrl
             });
           } else if (playBtn) {
             playBtn.disabled = true;
             playBtn.innerHTML = `<span>Geen online preview beschikbaar</span>`;
           }
-        } else if (playBtn) {
-          playBtn.disabled = true;
-          playBtn.innerHTML = `<span>Geen online preview gevonden</span>`;
+        } else {
+          // Geen track gevonden die door de strenge artiest + titel controle kwam;
+          // probeer nog wel of het album zelf een geverifieerde albumhoes heeft
+          if (!verifiedThumbUrl) {
+            verifiedThumbUrl = await findVerifiedAlbumCoverOnItunes(artist, album);
+            if (verifiedThumbUrl) {
+              mediaCache[cacheKey] = { artworkUrl: verifiedThumbUrl };
+              localStorage.setItem(MEDIA_CACHE_STORAGE_KEY, JSON.stringify(mediaCache));
+            }
+          }
+
+          if (verifiedThumbUrl && coverEl) {
+            const hiResCover = verifiedThumbUrl.replace("100x100bb", "600x600bb");
+            coverEl.innerHTML = `<img src="${hiResCover}" alt="${escapeHtml(album)}" />`;
+          }
+
+          if (playBtn) {
+            playBtn.disabled = true;
+            playBtn.innerHTML = `<span>Geen geverifieerde preview gevonden</span>`;
+          }
         }
       } catch (err) {
         if (playBtn) {
@@ -2763,21 +3142,18 @@
       const thumbs = Array.from(document.querySelectorAll(".track-thumb")).slice(0, 25);
       for (const el of thumbs) {
         const key = el.dataset.artkey;
-        if (mediaCache[key]) continue;
+        if (mediaCache[key] !== undefined) continue;
         const artist = el.dataset.artist;
         const album = el.dataset.album;
         try {
-          const q = encodeURIComponent(`${artist} ${album}`);
-          const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1`);
-          const data = await res.json();
-          if (data.results && data.results[0]?.artworkUrl100) {
-            const url = data.results[0].artworkUrl100;
-            mediaCache[key] = { artworkUrl: url };
-            el.innerHTML = `<img src="${url}" alt="Cover" loading="lazy" />`;
+          const verifiedUrl = await findVerifiedAlbumCoverOnItunes(artist, album);
+          if (verifiedUrl) {
+            mediaCache[key] = { artworkUrl: verifiedUrl };
+            el.innerHTML = `<img src="${verifiedUrl}" alt="Cover" loading="lazy" />`;
           } else {
             mediaCache[key] = { artworkUrl: null };
           }
-          localStorage.setItem("cd_media_cache_v1", JSON.stringify(mediaCache));
+          localStorage.setItem(MEDIA_CACHE_STORAGE_KEY, JSON.stringify(mediaCache));
         } catch (e) {}
       }
       thumbQueueRunning = false;
@@ -2994,7 +3370,7 @@
       document.getElementById("panelAddAlbum").style.display = "none";
     });
 
-    // Online Album Tracklist Zoeken via iTunes Lookup
+    // Online Album Tracklist Zoeken via iTunes Lookup (met verificatie op Artiest)
     document.getElementById("btnLookupAlbum").addEventListener("click", async () => {
       const artist = document.getElementById("albumArtistInput").value.trim();
       const album = document.getElementById("albumTitleInput").value.trim();
@@ -3010,21 +3386,28 @@
       previewBox.textContent = "Album en tracklist online opzoeken...";
 
       try {
-        const q = encodeURIComponent(`${artist} ${album}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1`);
+        const searchArtist = getCanonicalSearchArtist(artist);
+        const q = encodeURIComponent(`${searchArtist} ${album}`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=15`);
         const albumData = await res.json();
 
-        if (!albumData.results || albumData.results.length === 0) {
+        const verifiedAlbum = (albumData.results || []).find(
+          item => isArtistVerified(artist, item.artistName) && isAlbumTitleVerified(album, item.collectionName)
+        ) || (albumData.results || []).find(
+          item => isArtistVerified(artist, item.artistName)
+        );
+
+        if (!verifiedAlbum) {
           fetchedAlbumTracks = null;
-          previewBox.textContent = "Geen album online gevonden. Controleer de spelling of voeg de nummers los toe.";
+          previewBox.textContent = "Geen geverifieerd album van deze artiest gevonden. Controleer de spelling of voeg de nummers los toe.";
           return;
         }
 
-        const collectionId = albumData.results[0].collectionId;
-        const releaseYear = albumData.results[0].releaseDate
-          ? new Date(albumData.results[0].releaseDate).getFullYear()
+        const collectionId = verifiedAlbum.collectionId;
+        const releaseYear = verifiedAlbum.releaseDate
+          ? new Date(verifiedAlbum.releaseDate).getFullYear()
           : "";
-        const primaryGenre = albumData.results[0].primaryGenreName || "";
+        const primaryGenre = verifiedAlbum.primaryGenreName || "";
 
         const tracksRes = await fetch(`https://itunes.apple.com/lookup?id=${collectionId}&entity=song`);
         const tracksData = await tracksRes.json();
@@ -3032,7 +3415,7 @@
         const songs = tracksData.results.filter(item => item.wrapperType === "track");
         fetchedAlbumTracks = songs.map(s => ({
           artist: artist,
-          album: albumData.results[0].collectionName || album,
+          album: verifiedAlbum.collectionName || album,
           nr: String(s.trackNumber || "1"),
           title: s.trackName,
           year: releaseYear,
@@ -3042,7 +3425,7 @@
 
         previewBox.innerHTML = `
           <div style="font-weight:700; margin-bottom:6px; color:var(--accent);">
-            Gevonden: ${escapeHtml(albumData.results[0].collectionName)} (${releaseYear}) - ${fetchedAlbumTracks.length} nummers
+            Gevonden: ${escapeHtml(verifiedAlbum.collectionName)} - ${escapeHtml(verifiedAlbum.artistName)} (${releaseYear}) • ${fetchedAlbumTracks.length} nummers
           </div>
           ${fetchedAlbumTracks.map(t => `<div>#${escapeHtml(t.nr)} - ${escapeHtml(t.title)}</div>`).join("")}
         `;
